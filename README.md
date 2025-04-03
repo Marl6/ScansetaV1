@@ -24,8 +24,8 @@ python app.py
 3️⃣ Start the Frontend
 
 ```cd front_end
-
-npm start
+```
+```npm start
 ```
 
 🗄️ Database Management (SQLite)
