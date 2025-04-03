@@ -25,7 +25,7 @@ python app.py
 ```sh
 cd front_end
 npm start
-
+```
 
 🗄️ Database Management (SQLite)
 
