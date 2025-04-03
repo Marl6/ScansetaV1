@@ -1,6 +1,6 @@
-### **🚀 Scanseta System - Setup Guide
+### **🚀 Scanseta System - Setup Guide**
 
-📌 How to Run the System**
+### **📌 How to Run the System**
 Follow these steps to start the Scanseta system:
 
 ### **1️⃣ Start the Backend Server**
@@ -47,5 +47,4 @@ Node.js (npm install in front_end)
 Python Packages (pip install -r requirements.txt
 ```
 
-### **📌 Tip: Always check the error messages—they usually indicate which package is missing.
-**
+### **📌 Tip: Always check the error messages—they usually indicate which package is missing.**
