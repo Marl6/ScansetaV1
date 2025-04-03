@@ -1,17 +1,17 @@
-🚀 Scanseta System - Setup Guide
+**🚀 Scanseta System - Setup Guide
 
-📌 How to Run the System
+📌 How to Run the System**
 Follow these steps to start the Scanseta system:
 
-1️⃣ Start the Backend Server
+**1️⃣ Start the Backend Server**
 
-```cd back_end
-
+```sh
+cd back_end
 node server.js
 ```
 
-2️⃣ Start the Lowi Code Backend (Python API)
-
+**2️⃣ Start the Lowi Code Backend (Python API)
+**
 ```cd lowi_code
 
 cd back_end
