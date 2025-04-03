@@ -1,0 +1,143 @@
+/* src/css/dashboard3.css */
+
+.search-components-container{
+    display: flex;
+    width: 80%;
+    height: 30%;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-items: center;
+}
+
+
+.search-container {
+    width: 80%; /* Allow full width */
+    display: flex; /* Retain flex to center child elements */
+    justify-content: center; /* Center children */
+    align-items: center;
+    height: 28%;
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center; /* Align items vertically */
+    position: relative; /* Positioning for the icon */
+    width: 80%; /* Make the wrapper wider to accommodate the button */
+    height: 100%;
+}
+
+.search-bar {
+    width: 100%; /* Use full width of the wrapper */
+    height: 100%; /* Adjust height as needed */
+    border-radius: 25px; /* More rounded corners for a modern look */
+    padding: 0 40px; /* Adjusted padding for uniformity */
+    font-size: 150%; 
+    color:#32B8CA; /* Smaller font size for a cleaner appearance */
+    background-color: #fff; /* White background for minimalism */
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.3);
+    border: 1px solid #ffffff; /* Subtle border */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
+}
+
+
+/* Change border color on focus */
+.search-bar:focus {
+    border-color: #ffffff; /* Change border color on focus */
+    box-shadow: 5px 15px 15px rgba(6, 154, 173, 0.3); /* Optional: subtle glow effect */
+    outline: none; /* Remove outline */
+}
+
+.search-bar::placeholder {
+    color: #aaa; /* Lighter placeholder color for minimalism */
+    font-size: inherit; /* Inherit font size from .search-bar */
+}
+
+
+
+
+/* Style for the search icon */
+.search-icon {
+    width: 60%; /* Adjust size as necessary */
+    height: auto; /* Adjust size as necessary */
+}
+
+
+.search-button {
+    display: flex;
+    margin-left: 10px;
+    height: 100%;
+    width: 10%;
+    border-radius: 25px;
+    background-color: #32B8CA;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Change button color on hover */
+.search-button:hover {
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.3);
+}
+
+
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 51%;
+    height: 20%;
+    margin-right: 6%;
+    margin-top: 0px; /* Space between search input and error message */
+
+}
+
+
+
+.error-message {
+    color: rgba(255, 0, 0, 0.668);
+    font-size: 18px; /* Set a size for the error message */
+    text-align: left; /* Center align the error message */
+
+}
+
+.suggestions-container{
+    display: flex;
+    width: 45%;
+    margin-right: 6%;
+    height: 20%;
+    margin-top: 0px; /* Space between search input and error message */
+    justify-content: center;
+
+}
+
+.suggestions-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+    margin-top: -2.8%;
+
+    max-height: 180px;
+    overflow-y: auto;
+    background: white;
+    color: #32B8CA;
+    position: absolute;
+    z-index: 0;
+    width: calc(35% - 20px); /* Match the width of the input */
+    border-radius: 20px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
+.suggestions-list li {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestions-list li:hover {
+    background-color: #32B8CA;
+    color: white;
+}

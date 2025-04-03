@@ -1,0 +1,1 @@
+print("panty sa oh")

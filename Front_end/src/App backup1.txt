@@ -1,0 +1,56 @@
+import React, { useState } from 'react';
+import Dashboard from './components/pages/dashboard';
+import UploadFile from './components/pages/UploadFile';
+import SearchMed from './components/pages/search_med';
+import MedInfo from './components/pages/medinfo';
+import { getMedicineInfo } from './components/database';
+
+function App() {
+  const [currentDashboard, setCurrentDashboard] = useState(1);
+  const [medicineData, setMedicineData] = useState(null);
+
+  const goToDashboard1 = () => setCurrentDashboard(1);
+  const goToScan = () => setCurrentDashboard(2);
+  const goToSearchMed = () => setCurrentDashboard(3);
+  const goToMedInfo = () => setCurrentDashboard(4);
+
+  const handleMedicineSearch = async (medicineName) => {
+    console.log(`Searching for medicine: ${medicineName}`);
+    try {
+      const data = await getMedicineInfo(medicineName);
+      if (data) {
+        console.log('Successfully fetched medicine data:', data);
+        setMedicineData(data);
+        setTimeout(() => goToMedInfo(), 0); // Ensure state updates before navigation
+      } else {
+        console.error('No data found for this medicine.');
+      }
+    } catch (err) {
+      console.error('Error fetching medicine data:', err);
+    }
+  };
+
+  return (
+    <div className="App">
+      {currentDashboard === 1 && (
+        <Dashboard goToDashboard2={goToScan} goToDashboard3={goToSearchMed} />
+      )}
+      {currentDashboard === 2 && <UploadFile goNext={goToSearchMed} goBack={goToDashboard1} goToMedInfo={goToMedInfo} setMedicineData={setMedicineData} />}
+      {currentDashboard === 3 && (
+        <SearchMed
+          goBack={goToDashboard1}
+          handleMedicineSearch={handleMedicineSearch}
+          setMedicineData={setMedicineData}
+        />
+      )}
+      {currentDashboard === 4 && medicineData && (
+        <MedInfo
+          goToDashboard3={goToSearchMed}
+          medicineData={medicineData}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;

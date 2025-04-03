@@ -1,0 +1,714 @@
+html, body {
+    margin: 0; /* Remove any default margin */
+    padding: 0; /* Remove any default padding */
+    width: 100%; /* Ensure full-width */
+    height: 100%; /* Ensure full-height */
+    overflow: hidden; /* Disable scrolling */
+}
+
+
+
+
+
+
+
+
+.overall-upload-container{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column-reverse;
+  width: 75%;
+  height: 70%;
+  margin-top: 50px;
+}
+
+
+.viewinfo-button[disabled] {
+  background-color: rgba(114, 7, 7, 0.267);
+  border-radius: 0px;
+  height: 50%;
+
+}
+
+.content-upload-container{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row-reverse;
+  width: 99%;
+  height: 95%;
+  transition: all .016s ease-in-out; /* Smooth layout adjustments */
+}
+
+@keyframes bounceFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.information-display {
+  padding: 10px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+  width: 30%;
+  height: 80%;
+}
+
+.progress-container {
+  width: 100%; /* Full width of the container */
+  background-color: #e0e0e0; /* Background color of the container */
+  height: 10px; /* Same height as the progress bar */
+  border-radius: 5px; /* Rounded edges for the container */
+  overflow: hidden; /* Ensures progress stays within bounds */
+}
+
+.progress-image-display {
+  width: 0%; /* Initial width is 0% */
+  background-color: #11646e; /* Color of the progress */
+  height: 10px; /* Match container height */
+  transition: width 0.5s ease; /* Smooth progress bar animation */
+  border-radius: 5px; /* Rounded edges for the progress */
+}
+
+
+
+
+.information-title-display{
+  width: 100%;
+  height: 13%;
+  border-top-right-radius: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* Adds a subtle drop shadow */
+  border-top-left-radius: 15px;
+  background-color: #32B8CA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.information-title-display strong{
+  color: white;
+  font-size: 1.3vw;
+  padding: 0px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  letter-spacing: 0.1em; /* Adjust the value as desired */
+}
+
+
+.information-content-display{
+  display:flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-direction: column;
+  background-color: rgba(255, 255, 255, 0.386);
+  width: 100%;
+  height: 80%;
+}
+
+
+.medicine-content-display{
+  display:flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 85%;
+  height: 90%;
+}
+
+.medicine-detected-display{
+  margin-top: 10px;
+  padding: 5px;
+  display: flex;
+  width: 98.5%;
+  height: 10%;
+  background-color: rgba(255, 255, 255, 0);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adds a subtle drop shadow */
+  border: #32B8CA;
+  border-width: 3px;
+  border-style: solid;
+  border-radius: 10px;
+  justify-content: space-between;
+  /* align-content: center; */
+  align-items: center;
+}
+
+.predicted-medicine {
+  padding-left: 3px;
+  letter-spacing: 0.2em;
+  color:#32B8CA;
+}
+
+
+.medicine-remove-button{
+  width: 10%;
+  height: 100%;
+  background-color: rgba(214, 52, 52, 0.803);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adds a subtle drop shadow */
+  color: white;
+  border: none;
+  display: flex;
+  /* gap: 10px; */
+  align-items: center;
+  border-radius: 30px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  justify-content: center;}
+
+  .buttons-content-display{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+
+  width: 100%;
+  height: 10%;
+}
+
+.viewinfo-button{
+  padding: 10px 30px;
+  margin-top: 20px;
+  margin-right: 50px;
+  height: 80%;
+  background-color:#33b3c4;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: white;
+  border: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+
+}
+
+.viewinfo-button:hover {
+  background-color: #11646e;
+  border-radius: 100px;
+  }
+
+.reset-button {
+  margin-bottom: 30px;
+  padding: 10px 30px;
+  height: 90%;
+  background-color:rgba(214, 52, 52, 0.796);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: white;
+  border: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+.reset-content-display{
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgb(72, 16, 16);
+  width: 85%;
+  height: 85%;
+}
+
+.note-content-display {
+  padding: 5px;
+  display: flex;
+  display: inline; /* Ensures the content stays on one line */
+  font-size: 14px; /* Adjust font size as needed */
+  line-height: 1.5; /* Adjust line spacing if necessary */
+  border-top: 3px solid #32B8CA; /* Adds a top border with 1px thickness and black color */
+  padding-top: 5px; /* Optional: adds space between the border and content */
+  letter-spacing: 0.1em;
+  color:#1d94a4;
+}
+
+.divider-information-display{
+  width: 5%;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-out {
+  animation: fadeOut 0.5s;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.warning-text {
+  color: red;
+  font-size: 12px;
+}
+
+
+
+
+.image-display{
+    padding: 10px;
+    display: flex;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adds a subtle drop shadow */
+    border: #94DAE3;
+    border-width: 3px;
+    border-radius: 10px;
+    width: 23%;
+    height: 90%;
+    align-items: center;
+    justify-content: space-around;
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+
+.title-display{
+    width: 100%;
+    height: 13%;
+    border-top-right-radius: 15px;
+    box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.1); /* Adds a subtle drop shadow */
+    border-top-left-radius: 15px;
+    background-color: #32B8CA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.title-display p{
+    color: white;
+    font-size: 1.3vw;
+    padding: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    letter-spacing: 0.2em; /* Adjust the value as desired */
+}
+
+
+.main-container-image-display {
+  display: flex;
+  width: 100%;
+  height: 80%;
+  margin-top:20px;
+  max-height: 70%;
+  background-color: rgba(255, 255, 255, 0.451);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+
+.container-image-display {
+  width: 100%;
+  height: 85%; /* Maintains the height */
+  max-height: 85%; /* Ensures it doesn't expand beyond this height */
+  background-color: rgb(252, 252, 252);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box; /* Ensures padding and border do not affect height */
+}
+
+.bounding-box {
+  position: absolute;
+  border: 2px solid red; /* Bounding box color */
+  pointer-events: none; /* Makes sure the box doesn't interfere with clicks */
+}
+ 
+  .preview-img {
+    width: 100%; /* Make the image width match the container's width */
+    height: auto; /* Maintain aspect ratio for the width */
+    object-fit: contain; /* Ensures the image fills the width while cropping excess height */
+    border-radius: 8px; /* Rounded corners */
+    display: block; /* Ensure proper rendering in all browsers */
+  }
+  
+  .placeholder {
+    color: #aaa;
+    font-style: italic;
+    text-align: center;
+  }
+  
+
+
+
+
+.status-image-display{
+  
+    display: flex;
+    width: 98.5%;
+    height: 10%;
+    background-color: rgba(255, 255, 255, 0);
+    align-items: center;
+    justify-content: center;
+}
+
+.status-text {
+  display: flex;
+  justify-content: center;
+  color: #32B8CA;
+  opacity: 0; /* Start with opacity 0 for fade-in effect */
+  animation: fadeIn .5s forwards; /* Apply fadeIn animation */
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0; /* Start with opacity 0 */
+  }
+  100% {
+    opacity: 1; /* End with full opacity */
+  }
+}
+
+.overall-buttons-container {
+    display: flex;
+    background-color: #45a04900;
+    margin-top: 10px;
+    width: 100%;
+    height: 10%;
+    justify-content: center; /* Adds space between the child containers */
+    gap: 10px; /* Adds space between the children */
+}
+
+.overall-buttons-container > .child {
+    /* Optional: No need for margin if using gap */
+    /* margin: 0 10px; */
+    flex-grow: 0; /* Prevent child from growing */
+    flex-shrink: 0; /* Prevent child from shrinking */
+}
+
+
+.choose-container {
+    display: flex;
+    margin-top: 10px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px;
+    height: 80%;
+  }
+  
+  
+  .upload-button{
+    height: 100%;
+  }
+  .upload-button:hover {
+    background-color: #45a049;
+  }
+  
+  .file-input {
+    display: none;
+  }
+  
+  .upload-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 12vh; /* Adjust the toggle width */
+    height: 30px; /* Height of the toggle */
+    border: 2px solid #32b8ca; /* Border color */
+    border-radius: 20px; /* Rounded corners */
+  }
+  
+  .toggle-switch input {
+    opacity: 0; /* Hide the input element */
+    width: 0;
+    height: 0;
+  }
+  
+  .divider-scan-buttons{
+    background-color: #555;
+    display: flex;
+    width:1vh;
+  }
+
+  
+  .slider {
+      margin-right: 5px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 12vh;
+      background-color: #ffffff00; /* Default background color */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for knob */
+      border-radius: 20px;
+      border-color: #32B8CA;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      overflow: hidden; /* Prevent overflow of content */
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+
+  }
+  
+
+  .slider:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for knob */;
+  }
+  
+  .slider .toggle-text {
+    position: absolute;
+    width: 50%;
+    text-align: center;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+  
+  /* When the toggle is OFF (unchecked), text is centered on the right */
+  input:not(:checked) + .slider .toggle-text {
+    transform: translateX(30%); /* Shift text slightly right */
+    color: #32b8ca; /* Text matches the border color */
+  }
+  
+  /* When the toggle is ON (checked), text is centered on the left */
+  input:checked + .slider .toggle-text {
+    transform: translateX(-30%); /* Shift text slightly left */
+    color: white; /* Text becomes white when background is colored */
+  }
+  
+  input:checked + .slider {
+    background-color: #32b8ca; /* Colored background when toggled ON */
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(60px); /* Knob moves to the right */
+  }
+  
+  .slider:before {
+    padding: 0px;
+    position: absolute;
+    content: "";
+    height: 25px;
+    width: 25px;
+    left: calc(15% - 10%);
+    background-color:white; /* Knob color */
+    border-radius: 50%; /* Rounded knob */
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for knob */
+  }
+  
+  
+  .scan-image-container {
+    margin-top:5px;
+    display: flex;
+    width: 85%;
+    justify-content: center;
+    align-items: center;
+    background-color: #32b8ca;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1); /* Moves the shadow to the top */
+    color: white;
+    font-size: 16px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+
+    
+
+  }
+  /* Keyframes for the glowing effect */
+
+  @keyframes bounceFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(-50px); /* Start from above */
+    }
+    50% {
+      opacity: 0.5;
+      transform: translateY(10px); /* Move slightly below */
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0); /* Settle in place */
+    }
+  }
+
+  .scan-image-container:hover {
+  background-color: #11646e;
+  }
+
+@keyframes glowEffect {
+  0% {
+    box-shadow: 0 0 20px #32b8ca, 0 0 5px #32b8ca, 0 0 5px #32b8ca;
+  }
+  50% {
+    box-shadow: 0 0 20px #32b8ca, 0 0 5px #32b8ca, 0 0 5px #32b8ca;
+  }
+  100% {
+    box-shadow: 0 0 20px #32b8ca, 0 0 5px #32b8ca, 0 0 5px #32b8ca;
+  }
+}
+  .scan-image-container[disabled] {
+    color: rgba(34, 34, 34, 0);
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0);
+    background-color: rgba(34, 34, 34, 0);
+    border-radius: 0px;
+  }
+
+  .scan-image-text {
+    font-weight: bold;
+  }
+  
+
+
+
+.upload-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border: 2px dashed #32B8CA;
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-label:hover {
+    background-color: rgba(50, 184, 202, 0.2);
+}
+
+.upload-icon {
+    height: 50px;
+    margin-bottom: 10px;
+}
+
+.file-input {
+    display: none;
+}
+
+.upload-button {
+    padding: 10px 30px;
+    height: 90%;
+    background-color: #32B8CA;
+    color: white;
+    border: none;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.upload-button:hover {
+    background-color: #26a7b5;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.3);
+}
+
+.upload-status {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #555;
+}
+
+.image-preview {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%; /* Adjust to your container width */
+    max-width: 300px; /* Optional: set a maximum width for the preview */
+    height: auto;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 5px;
+    background-color: #f9f9f9; /* Optional background for better visibility */
+  }
+  
+  .preview-img {
+    
+  }
+
+  .upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .image-preview {
+    position: relative; /* Ensure the button is positioned relative to this container */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .preview-img {
+    
+  }
+  
+  .scan-image-button {
+    position: absolute; /* Position it relative to the image */
+    width: 86%;
+    bottom: 10px; /* Position it near the bottom of the image */
+    left: 50%; /* Center the button horizontally */
+    transform: translateX(-50%); /* Correct centering */
+    padding: 10px 20px;
+    background-color: #32b8ca;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 10; /* Ensure the button is above the image */
+  }
+  
+  .scan-image-button:hover {
+    background-color: #29a2b1;
+  }
+  
+  
