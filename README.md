@@ -21,12 +21,11 @@ cd back_end
 python app.py
 ```
 
-3️⃣ Start the Frontend
+### **3️⃣ Start the Frontend**  
+```sh
+cd front_end
+npm start
 
-```cd front_end
-```
-```npm start
-```
 
 🗄️ Database Management (SQLite)
 
