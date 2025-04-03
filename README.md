@@ -10,8 +10,7 @@ cd back_end
 node server.js
 ```
 
-### **2️⃣ Start the Lowi Code Backend (Python API)
-**
+### **2️⃣ Start the Lowi Code Backend (Python API)**
 ```cd lowi_code
 
 cd back_end
