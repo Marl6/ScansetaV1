@@ -1,4 +1,4 @@
-##### **🚀 Scanseta System - Setup Guide**
+# **🚀 Scanseta System - Setup Guide**
 
 ### **📌 How to Run the System**
 Follow these steps to start the Scanseta system:
