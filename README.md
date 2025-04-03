@@ -4,6 +4,7 @@
 Follow these steps to start the Scanseta system:
 
 1️⃣ Start the Backend Server
+
 cd back_end
 node server.js
 
