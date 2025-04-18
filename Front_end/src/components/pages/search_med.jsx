@@ -3,7 +3,7 @@ import logo from '../assets/images/scanseta_logo_white.png'; // Adjust the path 
 import homeIcon from '../assets/icons/scan_success/home.png'; // Import the home icon
 import searchIcon from '../assets/icons/dashboard3/search.png'; // Import the search icon
 import '../css/search_med.css';
-import { getMedicineInfo } from '../database'; // Import the database function
+// Database function import removed to fix ESLint warning
 import Fuse from 'fuse.js'; // Import fuse.js for fuzzy matching
 
 // Debounce function to limit API calls
@@ -42,6 +42,7 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [useLocalFuzzy, setUseLocalFuzzy] = useState(false);
+  const [isValidSelection, setIsValidSelection] = useState(false); // Track if the current input is a valid selection
   
   // Fuse.js for fallback local search if API is unavailable
   const fuse = new Fuse(fallbackMedicines, {
@@ -50,8 +51,9 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
   });
 
   // Debounced function to search medicines from RxNorm API
-  const fetchMedicines = useCallback(
-    debounce(async (term) => {
+  const fetchMedicines = useCallback(async (term) => {
+    // Using inline function as recommended by ESLint
+    const debouncedFetch = debounce(async () => {
       if (term.length < 2) {
         setSuggestions([]);
         setSuggestionsVisible(false);
@@ -59,6 +61,12 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
       }
       
       setIsLoading(true);
+      
+      // Set a 2-second timeout to automatically clear the loading state
+      const loadingTimeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+      
       try {
         const response = await fetch(`http://localhost:5001/medicines/search/${encodeURIComponent(term)}`);
         
@@ -68,6 +76,9 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
         
         const data = await response.json();
         console.log('Medicines from API:', data);
+        
+        // Clear the timeout as we got a valid response
+        clearTimeout(loadingTimeout);
         
         if (data.medications && data.medications.length > 0) {
           setSuggestions(data.medications);
@@ -87,35 +98,55 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
         setSuggestions(localResults);
         setSuggestionsVisible(localResults.length > 0);
         setUseLocalFuzzy(true);
+        
+        // Clear the timeout as we're handling the error case
+        clearTimeout(loadingTimeout);
       } finally {
         setIsLoading(false);
       }
-    }, 300), // 300ms debounce delay
-    [fuse]
+    }, 300); // 300ms debounce delay
+    
+    debouncedFetch();
+  }, [fuse]
   );
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
     
+    // When user types manually, it's not a valid selection until they choose from dropdown
+    setIsValidSelection(false);
+    
     if (value) {
+      // Clear error and wait for suggestions to appear
+      setError('');
       // Show loading state
       setIsLoading(true);
       // Trigger debounced API search
       fetchMedicines(value);
     } else {
+      setError('');
       setSuggestions([]);
       setSuggestionsVisible(false);
     }
   };
 
   const handleSearchSubmit = async () => {
+    // Check if the search term is a valid selection from suggestions
+    if (!isValidSelection) {
+      setError('Please select a medicine from the suggestions dropdown');
+      return;
+    }
+    
+    // Hide suggestions dropdown immediately when search button is clicked
+    setSuggestionsVisible(false);
+    
     if (searchTerm) {
       // Get the selected medicine - either from suggestions or the search term itself
       let selectedMedicine = searchTerm;
       
-      // If we have suggestions visible, use the first suggestion as the most likely match
-      if (suggestions.length > 0 && suggestionsVisible) {
+      // If we have suggestions, use the first suggestion as the most likely match
+      if (suggestions.length > 0) {
         selectedMedicine = suggestions[0];
       } else if (useLocalFuzzy) {
         // If using local fuzzy search, get the closest match
@@ -125,7 +156,17 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
 
       if (selectedMedicine) {
         try {
+          // Show loading state while AI generates data
+          setIsLoading(true);
           setError('Generating AI information... Please wait, this may take up to 30 seconds.');
+          
+          // Set a 2-second timeout to ensure loading state doesn't persist indefinitely
+          const loadingTimeout = setTimeout(() => {
+            if (isLoading) {
+              console.log('Timeout reached: Setting loading state to false');
+              setIsLoading(false);
+            }
+          }, 2000);
           
           // Use the AI endpoint to get medicine information
           console.log(`Fetching data for medicine: ${selectedMedicine}`);
@@ -136,6 +177,9 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
               'Content-Type': 'application/json'
             },
           });
+          
+          // Clear the timeout as we got a response
+          clearTimeout(loadingTimeout);
           
           console.log('Response status:', response.status);
           
@@ -161,13 +205,16 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
               medicine_complication: aiData.medicine_complication
             });
             setError('');
+            setIsLoading(false); // Stop loading
             setSource && setSource('search'); // Set source if the function exists
             goToMedInfo && goToMedInfo(); // Navigate if the function exists
           } else {
+            setIsLoading(false); // Stop loading
             setError('No AI information generated for this medicine.');
           }
         } catch (err) {
           console.error('Error generating AI information:', err);
+          setIsLoading(false); // Stop loading in case of error
           setError(`Error: ${err.message || 'Failed to generate information.'}`);
           setTimeout(() => {
             setError('');
@@ -191,18 +238,28 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
 
   const handleSuggestionClick = (suggestion) => {
     setSearchTerm(suggestion);
+    setSuggestions([suggestion]); // Keep only the selected in suggestions
     setSuggestionsVisible(false);
+    setIsValidSelection(true); // Mark as valid selection
+    setIsLoading(false); // Ensure loading is false after selection
   };
 
-  const handleClickOutside = (e) => {
+
+
+  const handleClickOutside = useCallback((e) => {
     if (suggestionsVisible && !e.target.closest('.search-wrapper')) {
       setSuggestionsVisible(false);
     }
-  };
+  }, [suggestionsVisible]);
 
   useEffect(() => {
     window.addEventListener('click', handleClickOutside);
-  }, [suggestionsVisible]);
+    
+    // Cleanup function to remove event listener
+    return () => {
+      window.removeEventListener('click', handleClickOutside);
+    };
+  }, [suggestionsVisible, handleClickOutside]);
 
   return (
     <div className="dashboard">
@@ -224,11 +281,16 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
           <input
             type="text"
             className="search-bar"
-            placeholder="Search for any medicine name using RxNorm database..."
             value={searchTerm}
+            placeholder="Search for any medicine name using RxNorm database..."
             onChange={handleSearchChange}
           />
-          <button className="search-button" onClick={handleSearchSubmit} disabled={isLoading}>
+          <button 
+            className={`search-button ${isLoading ? 'loading' : ''}`} 
+            onClick={handleSearchSubmit} 
+            disabled={!isValidSelection || !searchTerm}
+            title={!isValidSelection && searchTerm ? 'Please select a medicine from the suggestions' : isLoading ? 'Loading...' : 'Search'}
+          >
             {isLoading ? (
               <div className="loading-spinner"></div>
             ) : (
@@ -238,15 +300,17 @@ const Search_med = ({ goBack, handleMedicineSearch, setMedicineData, setSource, 
         </div>
       </div>
 
-      <div className="search-info">
-        {useLocalFuzzy && suggestions.length > 0 && (
-          <p className="api-notice">Using local database. Connected to RxNorm for more comprehensive results.</p>
-        )}
-      </div>
 
-      <div className="error-container">
+
+      {/* <div className="error-container">
         <p className="error-message">{error}</p>
-      </div>
+      </div> */}
+
+      {/* <div className="search-info">
+        {searchTerm && suggestions.length > 0 && !isValidSelection && (
+          <p className="selection-hint">Please select a medicine from the list to continue</p>
+        )}
+      </div> */}
 
       <div className="suggestions-container">
         {isLoading && searchTerm.length > 0 && !error && (

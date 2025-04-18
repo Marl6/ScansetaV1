@@ -83,6 +83,23 @@
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Style for disabled search button */
+.search-button:disabled {
+    cursor: not-allowed;
+    opacity: 1;
+    background-color: #e16760;
+}
+
+/* Style for loading state of the search button */
+.search-button.loading {
+    background-color: #61ffb8;
+    cursor: wait;
+}
+
+.search-button:disabled:hover {
+    box-shadow: none;
+}
+
 
 .error-container {
     display: flex;
@@ -118,13 +135,13 @@
     list-style-type: none;
     padding: 0;
     margin: 5px 0 0 0;
-    margin-top: -2.8%;
+    margin-top: 0; /* Remove negative margin to fix spacing */
     max-height: 180px;
     overflow-y: auto;
-    background: white;
+    background: #ffffff;
     color: #32B8CA;
     position: absolute;
-    z-index: 0;
+    z-index: 1; /* Increase z-index to ensure it appears above other elements */
     width: calc(35% - 20px); /* Match the width of the input */
     border-radius: 20px;
     border-top-left-radius: 0px;
@@ -136,14 +153,15 @@
     padding: 12px 15px;
     cursor: pointer;
     border-bottom: 1px solid #f0f0f0;
-    transition: background-color 0.2s ease;
-    color: #333;
-    font-size: 14px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    color: #32B8CA; /* Change text color to match requested color */
+    font-size: 16px;
 }
 
 .suggestions-list li:hover {
     background-color: #f5f9ff;
-    color: #45b6fe;
+    color: #32B8CA; /* Keep consistent color on hover */
+    font-weight: bold; /* Make text bold on hover for better feedback */
 }
 
 .suggestions-list li:last-child {
@@ -185,6 +203,15 @@
     font-style: italic;
     text-align: center;
     margin: 5px 0;
+}
+
+.selection-hint {
+    color: #32B8CA;
+    font-size: 13px;
+    text-align: center;
+    margin: 5px 0;
+    font-weight: 500;
+    animation: pulse 1.5s infinite;
 }
 
 .search-info {

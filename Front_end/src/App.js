@@ -6,6 +6,7 @@ import MedInfo from "./components/pages/medinfo";
 import TalkToMic from "./components/pages/talkToMic"; // Corrected import
 import { getMedicineInfo } from "./components/database";
 
+
 function App() {
   const [currentDashboard, setCurrentDashboard] = useState(1);
   const [medicineData, setMedicineData] = useState(null);
