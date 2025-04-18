@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors'); // Import the cors package
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 const app = express();
 const port = 5000;
 
@@ -9,7 +10,8 @@ app.use(cors());
 app.use(express.json()); // Enable JSON parsing in Express
 
 // Open the SQLite database
-const db = new sqlite3.Database('C:/Users/Gwen/Downloads/Scanseta (FINAL BACKUP Jan 28 2025)/Scanseta (FINAL BACKUP Jan 28 2025)/Back_end/medicine_infos.db');
+const dbPath = path.join(__dirname, 'medicine_infos.db');
+const db = new sqlite3.Database(dbPath);
 
 // Root route
 app.get('/', (req, res) => {
