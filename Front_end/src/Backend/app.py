@@ -357,5 +357,100 @@ def search_medicines(search_term):
             'Access-Control-Allow-Headers': 'Content-Type'
         }
 
+# Global variable to track chat generation progress
+chat_progress = 0
+
+@app.route('/chat-with-llama', methods=['POST', 'OPTIONS'])
+def chat_with_llama():
+    global chat_progress
+    
+    # Handle CORS preflight request
+    if request.method == 'OPTIONS':
+        response_headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        }
+        return ('', 204, response_headers)
+    
+    # Handle actual request
+    response_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    }
+    
+    try:
+        # Reset progress for new request
+        chat_progress = 0
+        
+        # Get data from request
+        data = request.get_json()
+        messages = data.get('messages', [])
+        system_prompt = data.get('system_prompt', '')
+        model = data.get('model', 'meta-llama/Llama-3.1-8B-Instruct')
+        
+        # Check if messages exist
+        if not messages:
+            return jsonify({'error': 'No messages provided'}), 400, response_headers
+        
+        # Verify API key is available
+        if not TOGETHER_API_KEY:
+            return jsonify({'error': 'API key not configured'}), 500, response_headers
+        
+        print(f"Chat request using model: {model}")
+        print(f"System prompt: {system_prompt[:50]}...")
+        
+        # Format messages for the Together API
+        formatted_messages = []
+        
+        # Add system message if provided
+        if system_prompt:
+            formatted_messages.append({
+                "role": "system",
+                "content": system_prompt
+            })
+        
+        # Add conversation messages
+        for msg in messages:
+            formatted_messages.append({
+                "role": msg.get("role"),
+                "content": msg.get("content")
+            })
+        
+        # Call the Together API
+        try:
+            # Update to use the model available in your subscription
+            # Note: Using Llama-3.3-70B-Instruct-Turbo-Free which we know works from your other endpoint
+            response = client.chat.completions.create(
+                model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+                messages=formatted_messages
+            )
+            
+            chat_progress = 100  # Mark as complete
+            
+            if response.choices and len(response.choices) > 0:
+                ai_response = response.choices[0].message.content
+                return jsonify({
+                    'message': 'Response generated successfully',
+                    'response': ai_response
+                }), 200, response_headers
+            else:
+                return jsonify({'error': 'No response generated'}), 500, response_headers
+                
+        except Exception as api_error:
+            print(f"Error calling Together API: {str(api_error)}")
+            return jsonify({'error': f'AI processing failed: {str(api_error)}'}), 500, response_headers
+            
+    except Exception as e:
+        print(f"ERROR in chat_with_llama: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Request processing failed: {str(e)}'}), 500, response_headers
+
+@app.route('/chat-progress', methods=['GET'])
+def get_chat_progress():
+    global chat_progress
+    return jsonify({'progress': chat_progress})
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
