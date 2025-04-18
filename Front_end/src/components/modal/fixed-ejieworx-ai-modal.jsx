@@ -104,7 +104,7 @@ const formatInlineText = (text) => {
 
 const EjieworxAIModal = ({ isOpen, onClose }) => {
   const initialMessage = { 
-    text: "Hello! I'm the Scanseta AI assistant powered by Llama 3.1-8B-Instruct. How can I help you with medicine information today?", 
+    text: "Hello! I'm the Ejieworx AI assistant powered by Scantot 3.1-8B-Instruct. How can I help you with medicine information today?", 
     sender: 'ai' 
   };
   

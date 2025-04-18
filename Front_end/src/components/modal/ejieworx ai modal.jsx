@@ -117,7 +117,7 @@ const formatInlineText = (text) => {
 
 const EjieworxAIModal = ({ isOpen, onClose }) => {
   const initialMessage = {
-    text: "Hello! I'm the Scanseta AI assistant powered by Llama 3.1-8B-Instruct. How can I help you with medicine information today?",
+    text: "Hello! I'm the Scantot AI assistant powered by Ejieworx rada choy. How can I help you with medicine information today?",
     sender: "ai",
   };
 
@@ -294,7 +294,7 @@ const EjieworxAIModal = ({ isOpen, onClose }) => {
 
         {shouldRenderModal && (
           <div className="chat-header">
-            <h3>Scanseta AI Assistant (Llama 3.1-8B)</h3>
+            <h3> <strong>Scantot AI </strong>(Powered by ejieworx)</h3>
             <button
               className="close-button"
               onClick={() => {
