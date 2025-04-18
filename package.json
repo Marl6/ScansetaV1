@@ -5,6 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
+    "start-db": "set DB_PORT=5002 && node Front_end/src/Database/server.js",
+    "start-backend": "python Front_end/src/Backend/app.py",
+    "start-react": "cd Front_end && set PORT=3002 && npm run start",
+    "dev": "concurrently --kill-others-on-fail \"npm run start-db\" \"npm run start-backend\" \"npm run start-react\"",
+    "dev-db-backend": "concurrently \"npm run start-db\" \"npm run start-backend\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -30,5 +35,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

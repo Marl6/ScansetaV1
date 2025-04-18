@@ -1,7 +1,7 @@
 // src/components/database.js
 const getMedicineInfo = async (medicineName) => {
     try {
-        const response = await fetch(`http://localhost:5000/medicine/${medicineName}`);
+        const response = await fetch(`http://localhost:5002/medicine/${medicineName}`);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }

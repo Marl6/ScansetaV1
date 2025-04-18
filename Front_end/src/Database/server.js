@@ -3,7 +3,7 @@ const cors = require('cors'); // Import the cors package
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const app = express();
-const port = 5000;
+const port = process.env.DB_PORT || 5000;
 
 // Enable CORS for all routes
 app.use(cors());
