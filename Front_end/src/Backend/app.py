@@ -119,7 +119,7 @@ def scan_image():
 
         for key, prompt in prompts.items():
             response = client.chat.completions.create(
-                model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+                model="meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
                 messages=[
                     {
                         "role": "user",
