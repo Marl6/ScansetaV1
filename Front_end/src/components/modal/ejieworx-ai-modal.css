@@ -313,6 +313,43 @@
   color: #444;
 }
 
+/* Animation classes for modal */
+.modal-bounce-in {
+  animation: bounceIn 0.4s cubic-bezier(0.80, 0.8, 0.25, 0.50) forwards;
+}
+
+.modal-bounce-out {
+  animation: bounceOut 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+
+/* Animation keyframes */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceOut {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
 .highlight-text {
   background-color: #e6f7f9;
   padding: 0 3px;
