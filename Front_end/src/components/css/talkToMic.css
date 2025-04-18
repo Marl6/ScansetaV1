@@ -24,10 +24,6 @@
     height: auto;
 }
 
-.home-icon {
-    width: 40px; /* Adjust size */
-    height: 40px;
-}
 
 .popup {
     position: fixed;
