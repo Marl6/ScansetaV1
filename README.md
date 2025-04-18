@@ -15,6 +15,11 @@ node server.js
 
 cd back_end
 
+# IF NOT YET INSTALLED
+python -m venv .venv
+pip install -r requirements.txt
+
+
 .venv\Scripts\activate  # Activate the virtual environment
 
 python app.py
