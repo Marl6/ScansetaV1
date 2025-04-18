@@ -6,11 +6,15 @@ import resetIcon from '../assets/icons/scan_success/reset.png';
 import proceedIcon from '../assets/icons/scan_success/proceed.png';
 import homeIcon from '../assets/icons/scan_success/home.png';
 import axios from 'axios';
+import { Progress } from '@radix-ui/react-progress';
 
 const Scan = ({ goNext, goBack }) => {
   const webcamRef = useRef(null);
-  const [isWebcamReady, setIsWebcamReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [isWebcamReady, setIsWebcamReady] = useState(false);
+  const [scanSuccess, setScanSuccess] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [progressPolling, setProgressPolling] = useState(null);
 
   const capture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
@@ -22,6 +26,44 @@ const Scan = ({ goNext, goBack }) => {
     }
   };
 
+  // Function to fetch progress from the backend and simulate smooth progress
+  const fetchProgress = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/scan-progress');
+      const backendProgress = response.data.progress;
+      
+      // Get the current progress and increment it smoothly
+      setScanProgress(prevProgress => {
+        // If backend progress is higher, jump to it
+        if (backendProgress > prevProgress) {
+          return backendProgress;
+        }
+        // Otherwise increment by 1% up to the next checkpoint or 99% max
+        else if (prevProgress < 99) {
+          // Find the next checkpoint (20%, 40%, 60%, 80%, 100%)
+          const nextCheckpoint = Math.ceil(prevProgress / 20) * 20;
+          // Only increment if we haven't reached the next checkpoint
+          return prevProgress < nextCheckpoint - 1 ? prevProgress + 1 : prevProgress;
+        }
+        return prevProgress;
+      });
+      
+      // If backend says we're done, set to 100%
+      if (backendProgress >= 100) {
+        setScanProgress(100);
+        setScanSuccess(true);
+        
+        // Clear polling interval if it's still active
+        if (progressPolling) {
+          clearInterval(progressPolling);
+          setProgressPolling(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching progress:', error);
+    }
+  };
+  
   const handleProceed = async () => {
     if (!capturedImage) {
       alert('Please capture an image first.');
@@ -29,6 +71,14 @@ const Scan = ({ goNext, goBack }) => {
     }
 
     try {
+      // Reset progress before starting
+      setScanProgress(0);
+      setScanSuccess(false);
+      
+      // Start polling for progress with a faster interval for smoother updates
+      const intervalId = setInterval(fetchProgress, 200); // Poll every 200ms for smoother 1% increments
+      setProgressPolling(intervalId);
+      
       // Convert the captured image to a file
       const blob = await fetch(capturedImage).then((res) => res.blob());
       const file = new File([blob], 'capture.png', { type: 'image/png' });
@@ -45,11 +95,27 @@ const Scan = ({ goNext, goBack }) => {
         },
       });
 
+      // Make sure progress is set to 100
+      setScanProgress(100);
+      setScanSuccess(true);
+      
+      // Clear polling interval if it's still active
+      if (progressPolling) {
+        clearInterval(progressPolling);
+        setProgressPolling(null);
+      }
+      
       console.log('Server response:', response.data);
       goNext(); // Proceed to the next step
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to process image. Please try again.');
+      
+      // Clear polling interval on error
+      if (progressPolling) {
+        clearInterval(progressPolling);
+        setProgressPolling(null);
+      }
     }
   };
 
@@ -77,8 +143,10 @@ const Scan = ({ goNext, goBack }) => {
             />
           </div>
           <div className="progress">
-            <div className="progress-bar"></div>
-            <p className="progress-text">Scanned successfully</p>
+            <Progress value={scanProgress} />
+            <p className="progress-text">
+              {scanProgress < 100 ? `Processing... ${scanProgress}%` : "Scanned successfullsadasdy"}
+            </p>
           </div>
         </div>
         <div className="scan-buttons">

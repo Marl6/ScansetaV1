@@ -35,22 +35,22 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
     }
   };
 
-  const parseText = (text) => {
-    const parsedText = text.split("**").map((chunk, index) => {
-      if (index % 2 !== 0) {
-        return <strong key={index}>{chunk}</strong>;
-      } else {
-        const bulletText = chunk.split("*").map((subChunk, subIndex) => {
-          if (subIndex % 2 !== 0) {
-            return <li key={subIndex}>{subChunk}</li>;
-          }
-          return subChunk;
-        });
-        return bulletText;
-      }
-    });
-    return parsedText;
-  };
+  // const parseText = (text) => {
+  //   const parsedText = text.split("**").map((chunk, index) => {
+  //     if (index % 2 !== 0) {
+  //       return <strong key={index}>{chunk}</strong>;
+  //     } else {
+  //       const bulletText = chunk.split("*").map((subChunk, subIndex) => {
+  //         if (subIndex % 2 !== 0) {
+  //           return <li key={subIndex}>{subChunk}</li>;
+  //         }
+  //         return subChunk;
+  //       });
+  //       return bulletText;
+  //     }
+  //   });
+  //   return parsedText;
+  // };
 
   return (
     <div className="dashboard">
@@ -70,7 +70,22 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
 
           <div className="whole-content-container">
             <div className="content-container">
-              <p>{contentMap[activeButton]}</p>
+              <div 
+                style={{ color: '#32B8CA', fontSize: "20px" }} /* Sky blue color to match the theme */
+                dangerouslySetInnerHTML={{ 
+                  __html: contentMap[activeButton]
+                    // Replace ** with bold tags - also using sky blue for bold text
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong style="color: #32B8CA;">$1</strong>')
+                    // Wrap bullet points in a proper unordered list with sky blue color
+                    .replace(/((^|<br \/>)\s*\*\s(.+?)(<br \/>|$))+/gm, function(match) {
+                      return '<ul style="color: #32B8CA;">' + match.replace(/\*\s(.+?)(<br \/>|$)/g, '<li>$1</li>') + '</ul>';
+                    })
+                    // Replace individual * at the beginning of lines with - (dash)
+                    .replace(/(^|<br \/>)\s*\*\s/gm, '$1- ')
+                    // Replace newlines with line breaks
+                    .replace(/\n/g, '<br />')
+                }}
+              />
             </div>
           </div>
 

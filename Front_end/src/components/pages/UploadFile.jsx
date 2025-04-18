@@ -59,6 +59,17 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
     console.log('Preview image updated:', previewImage); 
   }, [previewImage, predictedMedicine]); // Both dependencies should be in a single array
   
+  // Cleanup effect for progress polling interval
+  useEffect(() => {
+    // Cleanup function that runs when component unmounts
+    return () => {
+      if (window.progressInterval) {
+        clearInterval(window.progressInterval);
+        window.progressInterval = null;
+      }
+    };
+  }, []); // Empty dependency array means this runs on mount and cleanup on unmount
+  
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -131,6 +142,48 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   };
   
 
+  // Function to fetch progress from the backend and simulate smooth progress
+  const fetchProgress = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/scan-progress');
+      const data = await response.json();
+      const backendProgress = data.progress;
+      
+      // Get the current progress
+      setProgress(prevProgress => {
+        // If backend progress is higher, jump to it
+        if (backendProgress > prevProgress) {
+          return backendProgress;
+        }
+        // Otherwise increment by 1% up to 99% max regardless of checkpoints
+        else if (prevProgress < 99) {
+          // Always increment by 1% to ensure smooth progress
+          return prevProgress + 1;
+        }
+        return prevProgress;
+      });
+      
+      // Update status message based on progress
+      setProgress(currentProgress => {
+        setStatusMessage(`Processing... ${currentProgress}%`);
+        return currentProgress;
+      });
+      
+      // If backend says we're done, set to 100%
+      if (backendProgress >= 100) {
+        setProgress(100);
+        setStatusMessage('Scan successful');
+        // Clear the interval when we reach 100%
+        if (window.progressInterval) {
+          clearInterval(window.progressInterval);
+          window.progressInterval = null;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching progress:', error);
+    }
+  };
+
   const handleScanImage = async () => {
     if (!selectedFile) {
       setStatusMessage('No image selected. Please upload or capture one first.');
@@ -138,7 +191,17 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       return;
     }
   
-    setProgress(40);
+    // Reset progress and start from 0
+    setProgress(0);
+    setStatusMessage('Starting scan process...');
+    
+    // Start polling for progress
+    if (window.progressInterval) {
+      clearInterval(window.progressInterval);
+    }
+    // Poll every 200ms for smoother 1% increments
+    window.progressInterval = setInterval(fetchProgress, 200);
+  
     const formData = new FormData();
     formData.append('file', selectedFile);
   
@@ -147,31 +210,86 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
         method: 'POST',
         body: formData,
       });
-  
-      setProgress(60);
+      
       const result = await response.json();
       console.log(result);
   
       if (response.ok) {
-        setStatusMessage('Scan successful');
-        setTimeout(() => setStatusMessage(''), 3000);
-  
-        setMedicineData({
-          medicine_info: result.medicine_info,
-          medicine_usage: result.medicine_usage,
-          medicine_complication: result.medicine_complication,
-          medicine_hazard: result.medicine_hazard,
-          medicine_emergency: result.medicine_emergency
-        });
-  
-        goToMedInfo();
+        // Create a smooth transition from current progress to 100%
+        // First stop the current interval
+        if (window.progressInterval) {
+          clearInterval(window.progressInterval);
+          window.progressInterval = null;
+        }
+        
+        // Get current progress and create a smooth animation to 100%
+        const currentProgress = progress;
+        if (currentProgress < 100) {
+          // Force a smooth transition to 100% in about 1 second
+          const remainingSteps = 100 - currentProgress;
+          const stepTime = 1000 / remainingSteps; // Time per step to complete in ~1 second
+          
+          let progressCounter = currentProgress;
+          const completeInterval = setInterval(() => {
+            progressCounter += 1;
+            setProgress(progressCounter);
+            setStatusMessage(`Processing... ${progressCounter}%`);
+            
+            if (progressCounter >= 100) {
+              clearInterval(completeInterval);
+              setStatusMessage('Scan successful');
+              setTimeout(() => setStatusMessage(''), 3000);
+              
+              // Now proceed with the rest of the handling after reaching 100%
+              // Process scan results and navigate to medicine info
+              setMedicineData({
+                medicine_info: result.medicine_info,
+                medicine_usage: result.medicine_usage,
+                medicine_complication: result.medicine_complication,
+                medicine_hazard: result.medicine_hazard,
+                medicine_emergency: result.medicine_emergency
+              });
+              setPredictedMedicine('Medicine scanned');
+              goToMedInfo();
+            }
+          }, stepTime);
+        } else {
+          // Already at 100%, proceed immediately
+          setStatusMessage('Scan successful');
+          setTimeout(() => setStatusMessage(''), 3000);
+          
+          // Process scan results and navigate to medicine info
+          setMedicineData({
+            medicine_info: result.medicine_info,
+            medicine_usage: result.medicine_usage,
+            medicine_complication: result.medicine_complication,
+            medicine_hazard: result.medicine_hazard,
+            medicine_emergency: result.medicine_emergency
+          });
+          setPredictedMedicine('Medicine scanned');
+          goToMedInfo();
+        }
       } else {
-        setStatusMessage(result.error || 'Failed to scan the image.');
-        setProgress(0);
+        // Handle non-OK response
+        setStatusMessage(`Error: ${result.error || 'Unknown error occurred'}`);
+        setTimeout(() => setStatusMessage(''), 3000);
+        
+        // Clean up interval
+        if (window.progressInterval) {
+          clearInterval(window.progressInterval);
+          window.progressInterval = null;
+        }
       }
     } catch (error) {
-      setUploadStatus('Error occurred while scanning the image.');
-      setProgress(0);
+      console.error('Error scanning image:', error);
+      setStatusMessage('Error scanning image. Please try again.');
+      setTimeout(() => setStatusMessage(''), 3000);
+      
+      // Clean up interval on error
+      if (window.progressInterval) {
+        clearInterval(window.progressInterval);
+        window.progressInterval = null;
+      }
     }
   };
   

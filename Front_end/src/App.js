@@ -58,6 +58,8 @@ function App() {
           goBack={goToDashboard1}
           handleMedicineSearch={handleMedicineSearch}
           setMedicineData={setMedicineData}
+          setSource={setSource}  // Add this to allow setting source directly
+          goToMedInfo={goToMedInfo}  // Add this to allow direct navigation
         />
       )}
       {currentDashboard === 4 && medicineData && (
