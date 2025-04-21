@@ -333,8 +333,8 @@ html, body {
 
 .container-image-display {
   width: 100%;
-  height: 85%; /* Maintains the height */
-  max-height: 85%; /* Ensures it doesn't expand beyond this height */
+  height: 80%; /* Maintains the height */
+  max-height: 80%; /* Ensures it doesn't expand beyond this height */
   background-color: rgb(252, 252, 252);
   display: flex;
   justify-content: center;

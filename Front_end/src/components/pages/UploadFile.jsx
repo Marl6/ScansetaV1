@@ -194,7 +194,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
             medicine_emergency: result.medicine_emergency
           });
   
-          goToMedInfo(); // Assuming this function exists to navigate or show results
+          // goToMedInfo(); // Assuming this function exists to navigate or show results
         } else {
           setStatusMessage(result.error || 'Failed to scan the image.');
           setProgress(0);
@@ -661,6 +661,11 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
           <div className="image-display">
   
             <div className="main-container-image-display">
+            <div className="status-image-display">
+              {statusMessage && (
+                <p className="status-text">{statusMessage}</p>
+              )}
+              </div>
               <div className="container-image-display">
                 {toggleMode === "Camera" ? (
                   previewImage ? (
@@ -686,11 +691,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               </div>
 
 
-              <div className="status-image-display">
-              {statusMessage && (
-                <p className="status-text">{statusMessage}</p>
-              )}
-              </div>
+
             </div>
   
             <div className="overall-buttons-container">
