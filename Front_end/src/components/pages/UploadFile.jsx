@@ -43,6 +43,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   const [progress, setProgress] = useState(0); // State for progress bar
   const [scanButtonState, setScanButtonState] = useState('hidden'); // 'hidden', 'scan', 'loading', 'proceed'
   const [isLoading, setIsLoading] = useState(false); // State to track loading during medicine validation
+  const [scanResults, setScanResults] = useState(null); // State to temporarily store scan results before validation
   
   // Fuse.js options for fuzzy matching
   const fuse = new Fuse(validMedicines, {
@@ -73,13 +74,57 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       setIsLoading(true);
       console.log('Validating medicines with RxNorm:', medicines);
       
+      // Check for responses that indicate AI couldn't identify medicines
+      const aiErrorResponses = [
+        'cannot identify', 
+        'don\'t have sufficient information',
+        'unable to identify',
+        'cannot determine',
+        'not able to identify'
+      ];
+      
+      // Filter out None and check for AI error responses
+      const containsAIError = medicines.some(med => {
+        if (!med) return false;
+        const lowerMed = med.toLowerCase();
+        return aiErrorResponses.some(errText => lowerMed.includes(errText));
+      });
+      
+      if (containsAIError) {
+        console.warn('AI reported inability to identify medicines');
+        setStatusMessage('No medicines could be detected in the image');
+        // Reset states to allow starting again
+        setPredictedMedicines([]);
+        setOriginalMedicines([]);
+        setPreviewImage(null);
+        setScanButtonState('scan'); // Keep the image but allow rescanning
+        return;
+      }
+      
+      // Check if medicines contains only 'None' or invalid entries
+      const validInputMedicines = medicines.filter(med => {
+        return med && 
+               med.toLowerCase() !== 'none' && 
+               !med.toLowerCase().includes('none.');
+      });
+      
+      if (validInputMedicines.length === 0) {
+        console.warn('No valid medicines to validate');
+        setStatusMessage('No valid medicines detected in image');
+        // Reset states to allow starting again
+        setPredictedMedicines([]);
+        setOriginalMedicines([]);
+        setScanButtonState('scan'); // Keep the image but allow rescanning
+        return;
+      }
+      
       // Call the validate-medicines endpoint
       const response = await fetch('http://127.0.0.1:5001/validate-medicines', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ medicines }),
+        body: JSON.stringify({ medicines: validInputMedicines }),
       });
       
       const data = await response.json();
@@ -88,35 +133,69 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
         console.log('Validated medicines:', data.validated_medicines);
         console.log(`Original count: ${data.original_count}, Validated count: ${data.validated_count}`);
         
-        // Use validated medicines if any exist, otherwise fall back to original
-        const finalMedicines = data.validated_medicines.length > 0 
-          ? data.validated_medicines 
-          : medicines;
+        // Check if no medicines were validated by RxNorm
+        if (data.validated_medicines.length === 0) {
+          console.warn('No medicines validated by RxNorm');
+          setStatusMessage('Detected text is not in medical database');
+          
+          // Show what was detected that couldn't be validated
+          if (validInputMedicines.length > 0) {
+            console.warn('Detected but not validated:', validInputMedicines.join(', '));
+          }
+          
+          // Reset states but keep scan button active
+          setPredictedMedicines([]);
+          setOriginalMedicines([]);
+          setScanButtonState('scan'); // Keep the image but allow rescanning
+          return;
+        }
         
-        console.log('Final detected medicines:', finalMedicines);
-        setPredictedMedicines(finalMedicines);
-        setOriginalMedicines(finalMedicines); // Store the original list for reset
+        // Use validated medicines
+        console.log('Final detected medicines:', data.validated_medicines);
+        setPredictedMedicines(data.validated_medicines);
+        setOriginalMedicines(data.validated_medicines); // Store the original list for reset
+        setScanButtonState('proceed'); // Show proceed button since we have valid medicines
+        
+        // NOW it's safe to set the medicine data in the parent component
+        // This ensures parent only gets valid medicine data
+        if (scanResults) {
+          // Create updated medicine data with validated medicines
+          const validatedMedicineData = {
+            ...scanResults,
+            detected_medicines: data.validated_medicines.join(','), // Use validated list
+          };
+          setMedicineData(validatedMedicineData);
+        }
       } else {
         console.error('Error validating medicines:', data.error);
-        // Fall back to the original medicines
-        setPredictedMedicines(medicines);
-        setOriginalMedicines(medicines);
+        setStatusMessage('Error verifying medicine names');
+        // Reset states but keep the scan button active
+        setPredictedMedicines([]);
+        setOriginalMedicines([]);
+        setScanButtonState('scan'); // Keep the image but allow rescanning
       }
     } catch (error) {
       console.error('Error validating medicines:', error);
-      // Fall back to the original medicines
-      setPredictedMedicines(medicines);
-      setOriginalMedicines(medicines);
+      setStatusMessage('Error validating medicines');
+      // Reset states but keep the scan button active
+      setPredictedMedicines([]);
+      setOriginalMedicines([]);
+      setScanButtonState('scan'); // Keep the image but allow rescanning
     } finally {
       setIsLoading(false);
     }
   };
   
+  // Reset function to clear the current scan and start over
   const handleReset = () => {
-    // Reset to the original list of medicines
-    setPredictedMedicines(originalMedicines);
+    // Reset to original state
+    setPredictedMedicines([]);
+    setOriginalMedicines([]);
+    setPreviewImage(null);
+    setScanButtonState('hidden');
+    setSelectedFile(null);
+    setStatusMessage('');
   };
-
 
   
   // Cleanup effect for progress polling interval
@@ -309,15 +388,16 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               setStatusMessage('Scan successful');
               setTimeout(() => setStatusMessage(''), 3000);
               
-              // Update button state to proceed
-              setScanButtonState('proceed');
-              
-              // Now proceed with the rest of the handling after reaching 100%
-              // Process scan results - the new structure has medicine-specific data
-              setMedicineData({
+              // Store scan results for validation - DON'T set scan button to proceed yet
+              // Pass the data to the component state through a temporary variable
+              // Will set to parent state only after validation is successful
+              const scanResultData = {
                 detected_medicines: result.detected_medicines, // Comma-separated list of medicines
                 medicine_data: result.medicine_data, // Medicine-specific information
-              });
+              };
+              
+              // Store temporarily in component state for later use after validation
+              setScanResults(scanResultData);
               
               // Get detected medicines from the API response
               // The backend now provides a direct list of medicine names
@@ -333,16 +413,31 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                 
                 console.log('Detected medicines from API:', detectedMedicines);
                 
-                // Validate medicines against RxNorm database
-                validateMedicinesWithRxNorm(detectedMedicines);
+                // Store detected medicines for validation
+              const detectedMedsArray = detectedMedicines;
+              
+              // Check if we only have 'None' directly
+              const containsOnlyNone = detectedMedsArray.every(med => !med || med.toLowerCase() === 'none' || med.toLowerCase().includes('none.'));
+              
+              if (containsOnlyNone) {
+                console.warn('Only None detected before validation');
+                setStatusMessage('No medicines detected in image');
+                setScanButtonState('scan'); // Keep scan button visible
+                // Clear medicine data to prevent navigation with invalid data
+                setMedicineData({});
               } else {
-                // If no medicines were detected, add a placeholder
-                detectedMedicines = ['Medicine detected']; // Generic placeholder
-                console.log('No medicines detected, using placeholder');
+                // Pass all detected medicines to the validation function
+                validateMedicinesWithRxNorm(detectedMedsArray);
+              }
+              } else {
+                // If no medicines were detected
+                setStatusMessage('No medicines detected in image');
+                console.log('No medicines detected');
                 
-                // Set the medicines state directly since no validation needed
-                setPredictedMedicines(detectedMedicines);
-                setOriginalMedicines(detectedMedicines); // Store the original list for reset
+                // Reset for a new scan
+                setPredictedMedicines([]);
+                setOriginalMedicines([]);
+                setScanButtonState('scan'); // Allow rescanning
               }
               
               // Don't automatically navigate to med info, let user click proceed button
@@ -457,8 +552,22 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   };
 
   const handleProceed = async () => {
+    // Check if there are valid medicines to proceed with
     if (!predictedMedicines || predictedMedicines.length === 0) {
       setUploadStatus('No predicted medicines to proceed with.');
+      setStatusMessage('No medicines to display');
+      return;
+    }
+    
+    // Check if the only medicine is 'None'
+    const validMedicines = predictedMedicines.filter(med => med && med.toLowerCase() !== 'none');
+    if (validMedicines.length === 0) {
+      setUploadStatus('No valid medicines to proceed with.');
+      setStatusMessage('No valid medicines detected');
+      // Reset the image to allow starting again
+      setPreviewImage(null);
+      setScanButtonState('hidden');
+      setSelectedFile(null);
       return;
     }
 
@@ -469,7 +578,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       // Create an updated medicine data object with the current list of medicines
       // This ensures only the remaining medicines (after user removal) are sent to MedInfo
       const updatedMedicineData = {
-        detected_medicines: predictedMedicines.join(','), // Join as comma-separated string
+        detected_medicines: validMedicines.join(','), // Join as comma-separated string
         medicine_data: {} // We'll populate this with only the remaining medicines
       };
       
@@ -485,23 +594,24 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       
       // Only include data for medicines that haven't been removed
       if (currentMedicineData && currentMedicineData.medicine_data) {
-        predictedMedicines.forEach(medicine => {
+        validMedicines.forEach(medicine => {
           if (currentMedicineData.medicine_data[medicine]) {
             updatedMedicineData.medicine_data[medicine] = currentMedicineData.medicine_data[medicine];
           }
         });
       }
       
-      console.log('Proceeding with filtered medicines:', predictedMedicines);
+      console.log('Proceeding with filtered medicines:', validMedicines);
       
       // Update the medicine data with only the remaining medicines
       setMedicineData(updatedMedicineData);
       
       // Navigate to the medicine info page with all remaining medicines
-      goToMedInfo(predictedMedicines[0]); // We still pass the first medicine as the primary one
+      goToMedInfo(validMedicines[0]); // We still pass the first medicine as the primary one
     } catch (err) {
       console.error('Error processing data:', err);
       setUploadStatus('Error processing data.');
+      setStatusMessage('Error processing medicine data');
     }
   };
   

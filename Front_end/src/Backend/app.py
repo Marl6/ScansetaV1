@@ -529,22 +529,32 @@ def validate_medicines():
         data = request.get_json()
         if not data or 'medicines' not in data:
             return jsonify({'error': 'No medicines provided'}), 400
-        
+
         medicines_to_validate = data['medicines']
         validated_medicines = []
-        
+
         # Validate each medicine against RxNorm
         for medicine in medicines_to_validate:
+            # Normalize the medicine name: trim whitespace and capitalize first letter
+            normalized_medicine = medicine.strip().lower()
+
+            # URL encode the medicine name for the API call
+            import urllib.parse
+            encoded_medicine = urllib.parse.quote(normalized_medicine)
+
+            print(f"Validating: Original='{medicine}', Normalized='{normalized_medicine}', Encoded='{encoded_medicine}'")
+
             # Call RxNorm API for approximate match
-            url = f"https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term={medicine}&maxEntries=5"
+            url = f"https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term={encoded_medicine}&maxEntries=5"
             response = requests.get(url)
             data = response.json()
-            
+            print(f"RxNorm API Response: {data}")
+
             # Check if any results were found
             found = False
             best_match = None
             best_score = 0
-            
+
             if 'approximateGroup' in data and 'candidate' in data['approximateGroup']:
                 candidates = data['approximateGroup']['candidate']
                 if candidates:
@@ -554,22 +564,54 @@ def validate_medicines():
                             if float(candidate['score']) > best_score:
                                 best_score = float(candidate['score'])
                                 best_match = candidate['name']
-                    
+
+                    # Log the match score to help with debugging
+                    print(f"Medicine: {medicine}, Best match: {best_match}, Score: {best_score}")
+
                     # If score is above threshold, consider it validated
-                    if best_score >= 70:  # Adjust threshold as needed
+                    # Set threshold very low to be extremely lenient during testing
+                    if best_score >= 10:  # Extremely lenient threshold for testing
                         found = True
-                    
-            # If found in RxNorm, add to validated list
+                        print(f" VALIDATED: {medicine} -> {best_match} (Score: {best_score})")
+                    else:
+                        print(f" REJECTED: {medicine} (Score too low: {best_score})")
+
+            # If no candidates were found at all in RxNorm, try a direct search as fallback
+            if not found and (best_score == 0 or best_match is None):
+                try:
+                    # Try direct search by name as fallback
+                    direct_url = f"https://rxnav.nlm.nih.gov/REST/drugs.json?name={encoded_medicine}"
+                    direct_response = requests.get(direct_url)
+                    direct_data = direct_response.json()
+
+                    print(f"Direct search fallback: {direct_data}")
+
+                    # Check if we found something via direct search
+                    if 'drugGroup' in direct_data and 'conceptGroup' in direct_data['drugGroup']:
+                        for group in direct_data['drugGroup']['conceptGroup']:
+                            if 'conceptProperties' in group and len(group['conceptProperties']) > 0:
+                                # We found a direct match
+                                found = True
+                                best_match = group['conceptProperties'][0]['name']
+                                print(f" DIRECT MATCH: {medicine} -> {best_match}")
+                                break
+                except Exception as direct_error:
+                    print(f"Error in direct search fallback: {direct_error}")
+
+            # If found in RxNorm (either way), add to validated list
             if found and best_match:
                 validated_medicines.append(best_match)  # Use the standardized name
+                print(f"Added to validated list: {best_match}")
             elif found:
                 validated_medicines.append(medicine)  # Use original name if no better match
-        
+                print(f"Added to validated list (original): {medicine}")
+
         return jsonify({
             'validated_medicines': validated_medicines,
             'original_count': len(medicines_to_validate),
             'validated_count': len(validated_medicines)
         })
+
         
     except Exception as e:
         print(f"Error validating medicines: {str(e)}")
