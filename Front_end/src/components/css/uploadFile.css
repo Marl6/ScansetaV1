@@ -119,11 +119,13 @@ html, body {
 
 
 .medicine-content-display{
-  display:flex;
-  justify-content: center;
+
+  display: flex;
+  justify-content: flex-start;
   align-items: flex-start;
   width: 85%;
   height: 90%;
+  flex-direction: column;
 }
 
 .medicine-detected-display{

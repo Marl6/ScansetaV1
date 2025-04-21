@@ -128,6 +128,7 @@ def scan_image():
         scan_progress = 20
 
         prompts = {
+            "detected_medicines": "What are the medicine names detected in this image? Please provide ONLY the names separated by commas without any additional text, explanations, or formatting. Example output format: 'Amoxicillin, Losartan'",
             "medicine_info": "Act like a pharmacist and provide detailed information about the medicine in this image. On the contents(text) that will be provided it must be formatted properly.",
             "medicine_usage": "Describe the proper usage and dosage of the medicine shown in this image.",
             "medicine_complication": "List possible complications, side effects, and contraindications of the medicine in this image.",
@@ -182,6 +183,7 @@ def scan_image():
         
         return jsonify({
             'message': 'Image processed successfully',
+            'detected_medicines': responses["detected_medicines"],
             'medicine_info': responses["medicine_info"],
             'medicine_usage': responses["medicine_usage"],
             'medicine_complication': responses["medicine_complication"],

@@ -29,7 +29,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
   const [previewImage, setPreviewImage] = useState(null); // State for the image preview
-  const [predictedMedicine, setPredictedMedicine] = useState(null); // State to store predicted medicine name
+  const [predictedMedicines, setPredictedMedicines] = useState([]); // State to store array of predicted medicine names
   const [toggleMode, setToggleMode] = useState('Upload'); // State for the toggle mode
   const webcamRef = useRef(null); // Reference for the webcam
   const [fadeAnimation, setFadeAnimation] = useState(false);
@@ -40,6 +40,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   const [isResetButtonNotVisible, setResetButtonNotVisible] = useState(false); // State for controlling visibility
   const [isProceedtButtonNotVisible, setProceedButtonNotVisible] = useState(false); // State for controlling visibility
   const [progress, setProgress] = useState(0); // State for progress bar
+  const [scanButtonState, setScanButtonState] = useState('hidden'); // 'hidden', 'scan', 'loading', 'proceed'
   
   // Fuse.js options for fuzzy matching
   const fuse = new Fuse(validMedicines, {
@@ -48,16 +49,21 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   });
 
   useEffect(() => {
-    if (predictedMedicine) {
-      const results = fuse.search(predictedMedicine);
-      const closestMatch = results.length > 0 ? results[0].item : null;
-  
-      if (closestMatch) {
-        setPredictedMedicine(closestMatch); // Automatically update with the closest match
-      }
+    if (predictedMedicines.length > 0) {
+      // For each predicted medicine, find the closest match using Fuse.js
+      const updatedMedicines = predictedMedicines.map(medicine => {
+        if (typeof medicine === 'string') {
+          const results = fuse.search(medicine);
+          return results.length > 0 ? results[0].item : medicine;
+        }
+        return medicine;
+      });
+      
+      // Update with the closest matches
+      setPredictedMedicines(updatedMedicines);
     }
     console.log('Preview image updated:', previewImage); 
-  }, [previewImage, predictedMedicine]); // Both dependencies should be in a single array
+  }, [previewImage, predictedMedicines.length]); // Dependencies
   
   // Cleanup effect for progress polling interval
   useEffect(() => {
@@ -71,14 +77,17 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   }, []); // Empty dependency array means this runs on mount and cleanup on unmount
   
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
     if (file) {
       console.log(selectedFile);
       setSelectedFile(file);
       setPreviewImage(URL.createObjectURL(file)); // Create a preview URL for the selected image
       setStatusMessage('Image uploaded successfully');
-      setTimeout(() => setStatusMessage(''), 1800); // Reset after 3 seconds
+      setTimeout(() => setStatusMessage(''), 1800); // Reset after 1.8 seconds
+      
+      // Show scan button when image is uploaded
+      setScanButtonState('scan');
     }
   };
 
@@ -99,6 +108,9 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       setProgress(20); // Example progress update
       setStatusMessage('Image captured successfully');
       setTimeout(() => setStatusMessage(''), 3000);
+      
+      // Show scan button when image is captured
+      setScanButtonState('scan');
   
       console.log('File to upload:', file.name, file.type); // Debug logging
   
@@ -195,6 +207,9 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
     setProgress(0);
     setStatusMessage('Starting scan process...');
     
+    // Update button state to loading
+    setScanButtonState('loading');
+    
     // Start polling for progress
     if (window.progressInterval) {
       clearInterval(window.progressInterval);
@@ -240,8 +255,11 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               setStatusMessage('Scan successful');
               setTimeout(() => setStatusMessage(''), 3000);
               
+              // Update button state to proceed
+              setScanButtonState('proceed');
+              
               // Now proceed with the rest of the handling after reaching 100%
-              // Process scan results and navigate to medicine info
+              // Process scan results
               setMedicineData({
                 medicine_info: result.medicine_info,
                 medicine_usage: result.medicine_usage,
@@ -249,8 +267,33 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                 medicine_hazard: result.medicine_hazard,
                 medicine_emergency: result.medicine_emergency
               });
-              setPredictedMedicine('Medicine scanned');
-              goToMedInfo();
+              
+              // Get detected medicines from the API response
+              // The backend now provides a direct list of medicine names
+              let detectedMedicines = [];
+              
+              // Parse the detected_medicines from the API response
+              if (result.detected_medicines) {
+                // The response should be a comma-separated list of medicine names
+                detectedMedicines = result.detected_medicines
+                  .split(',')
+                  .map(name => name.trim())
+                  .filter(name => name.length > 0);
+                
+                console.log('Detected medicines from API:', detectedMedicines);
+              }
+              
+              // If no medicines were detected, add a placeholder
+              if (!detectedMedicines || detectedMedicines.length === 0) {
+                detectedMedicines = ['Medicine detected']; // Generic placeholder
+                console.log('No medicines detected, using placeholder');
+              }
+              
+              console.log('Final detected medicines:', detectedMedicines);
+              setPredictedMedicines(detectedMedicines);
+              
+              // Don't automatically navigate to med info, let user click proceed button
+              // goToMedInfo();
             }
           }, stepTime);
         } else {
@@ -258,7 +301,10 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
           setStatusMessage('Scan successful');
           setTimeout(() => setStatusMessage(''), 3000);
           
-          // Process scan results and navigate to medicine info
+          // Update button state to proceed
+          setScanButtonState('proceed');
+          
+          // Process scan results
           setMedicineData({
             medicine_info: result.medicine_info,
             medicine_usage: result.medicine_usage,
@@ -266,13 +312,41 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
             medicine_hazard: result.medicine_hazard,
             medicine_emergency: result.medicine_emergency
           });
-          setPredictedMedicine('Medicine scanned');
-          goToMedInfo();
+          
+          // Get detected medicines from the API response
+          // The backend provides a direct list of medicine names
+          let detectedMedicines = [];
+          
+          // Parse the detected_medicines from the API response
+          if (result.detected_medicines) {
+            // The response should be a comma-separated list of medicine names
+            detectedMedicines = result.detected_medicines
+              .split(',')
+              .map(name => name.trim())
+              .filter(name => name.length > 0);
+            
+            console.log('Detected medicines from API:', detectedMedicines);
+          }
+          
+          // If no medicines were detected, add a placeholder
+          if (!detectedMedicines || detectedMedicines.length === 0) {
+            detectedMedicines = ['Medicine detected']; // Generic placeholder
+            console.log('No medicines detected, using placeholder');
+          }
+          
+          console.log('Final detected medicines:', detectedMedicines);
+          setPredictedMedicines(detectedMedicines);
+          
+          // Don't automatically navigate to med info, let user click proceed button
+          // goToMedInfo();
         }
       } else {
         // Handle non-OK response
         setStatusMessage(`Error: ${result.error || 'Unknown error occurred'}`);
         setTimeout(() => setStatusMessage(''), 3000);
+        
+        // Reset the scan button to allow retrying
+        setScanButtonState('scan');
         
         // Clean up interval
         if (window.progressInterval) {
@@ -282,14 +356,19 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       }
     } catch (error) {
       console.error('Error scanning image:', error);
-      setStatusMessage('Error scanning image. Please try again.');
+      setUploadStatus(`Error: ${error.message}`);
+      setStatusMessage(`Error: ${error.message}`);
       setTimeout(() => setStatusMessage(''), 3000);
       
-      // Clean up interval on error
+      // Reset the scan button to allow retrying
+      setScanButtonState('scan');
+      
+      // Clean up interval
       if (window.progressInterval) {
         clearInterval(window.progressInterval);
         window.progressInterval = null;
       }
+      setProgress(0);
     }
   };
   
@@ -322,18 +401,28 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   };
 
   const handleProceed = async () => {
-    if (!predictedMedicine) {
-      setUploadStatus('No predicted medicine to proceed with.');
+    if (!predictedMedicines || predictedMedicines.length === 0) {
+      setUploadStatus('No predicted medicines to proceed with.');
       return;
     }
 
     try {
-      const data = await getMedicineInfo(predictedMedicine);
+      // For multiple medicines, we'll use the first one as the primary medicine
+      // But we'll store all detected medicines in the data
+      const primaryMedicine = predictedMedicines[0];
+      const data = await getMedicineInfo(primaryMedicine);
       console.log(data); // Log fetched data to inspect its structure
+      
       if (data) {
+        // Add the full list of detected medicines to the data object
+        const enhancedData = {
+          ...data,
+          detected_medicines: predictedMedicines // Store all detected medicines
+        };
+        
         // Set the medicine data and navigate to the next page
-        setMedicineData(data); // Pass the data to the parent component
-        goToMedInfo(predictedMedicine); // Navigate to the next page
+        setMedicineData(enhancedData); // Pass the enhanced data to the parent component
+        goToMedInfo(primaryMedicine); // Navigate to the next page with primary medicine name
       } else {
         setUploadStatus('No data found for this medicine.');
       }
@@ -347,11 +436,11 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
     if (statusMessage === "No Medicine Found") {
       setIsDetectedDisplayVisible(false); // Hide detected medicine container
       setProceedButtonNotVisible(false); // Hide the proceed button
-      setPredictedMedicine(null);
+      setPredictedMedicines([]);
     } else if (statusMessage === "Image uploaded successfully") {
       setIsDetectedDisplayVisible(false); // Hide detected medicine container
       setProceedButtonNotVisible(false); // Hide the proceed button
-      setPredictedMedicine(null);
+      setPredictedMedicines([]);
 
 
     } else if (statusMessage) {
@@ -380,17 +469,26 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       <div className="overall-upload-container">
   
         <div className="proceed-viewinfo-button">
-          {isProceedtButtonNotVisible&& (
+          {scanButtonState !== 'hidden' && (
           <button
-            className="viewinfo-button"
+            className={`viewinfo-button ${scanButtonState === 'loading' ? 'loading' : ''}`}
             onClick={() => {
-              handleProceed(); 
+              if (scanButtonState === 'scan') {
+                // Start scanning process
+                setScanButtonState('loading');
+                handleScanImage();
+              } else if (scanButtonState === 'proceed') {
+                // Proceed to view information
+                handleProceed();
+              }
             }}
             style={{
-              cursor: predictedMedicine ? "pointer" : "not-allowed",
+              cursor: scanButtonState === 'loading' ? "wait" : "pointer",
             }}
           >
-            <span>Proceed to View Information</span>
+            {scanButtonState === 'scan' && <span>Scan</span>}
+            {scanButtonState === 'loading' && <span className="loading-icon">⟳</span>}
+            {scanButtonState === 'proceed' && <span>Proceed to View Information</span>}
           </button>
           )}
           {showWarning &&
@@ -401,13 +499,13 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
         <div
           className="content-upload-container"
           style={{
-            justifyContent: predictedMedicine ? "center" : "center",
+            justifyContent: predictedMedicines.length > 0 ? "center" : "center",
           }}
         >
 
       
           {/* Conditionally Render Information Display */}
-          {predictedMedicine && toggleMode !== "Camera" && (
+          {predictedMedicines.length > 0 && toggleMode !== "Camera" && (
             <div className="information-display">
               <div className="information-title-display">
                 <strong>DETECTED MEDICINE</strong>
@@ -417,33 +515,43 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               <div className="information-content-display">
                 <div className="medicine-content-display">
 
-                  {isDetectedDisplayVisible && (
-                  <div className="medicine-detected-display">
-                    <p className="predicted-medicine">{predictedMedicine}</p>
-                    <button
-                      className="medicine-remove-button"
-                      onClick={() => {
-                        setIsDetectedDisplayVisible(false)
-                        setResetButtonNotVisible(true);
-                        setProceedButtonNotVisible(false);
-                        setProgress(0); // Initial progress
-
-                      }} // Hide the container
-                    >
-                      <span>x</span>
-                    </button>
-                  </div>
-                  )}
+                  {isDetectedDisplayVisible && predictedMedicines.map((medicine, index) => (
+                    <div className="medicine-detected-display" key={`medicine-${index}`}>
+                      <p className="predicted-medicine">{medicine}</p>
+                      <button
+                        className="medicine-remove-button"
+                        onClick={() => {
+                          // Remove this specific medicine from the array
+                          const updatedMedicines = [...predictedMedicines];
+                          updatedMedicines.splice(index, 1);
+                          setPredictedMedicines(updatedMedicines);
+                          
+                          // If all medicines are removed, show reset button
+                          if (updatedMedicines.length === 0) {
+                            setIsDetectedDisplayVisible(false);
+                            setResetButtonNotVisible(true);
+                            setProceedButtonNotVisible(false);
+                            setProgress(0); // Initial progress
+                          }
+                        }}
+                      >
+                        <span>x</span>
+                      </button>
+                    </div>
+                  ))}
                 </div>
                 {isResetButtonNotVisible && (
                 <div className="buttons-content-display">
                   <button
                     className="reset-button"
                     onClick={() => {
+                      // Restore detected medicines and show containers
                       setIsDetectedDisplayVisible(true); // Show the container
                       setResetButtonNotVisible(false);  // Update reset button visibility
                       setProceedButtonNotVisible(true);
                       setProgress(100);
+                      // Set scan button to proceed state
+                      setScanButtonState('proceed');
                     }}
                     
                   >
@@ -508,7 +616,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                         const mode = e.target.checked ? "Camera" : "Upload";
                         setToggleMode(mode);
                         setPreviewImage(null); // Clear webcam feed
-                        setPredictedMedicine(null); 
+                        setPredictedMedicines([]); 
                         setProceedButtonNotVisible(false);
                         setProgress(0); // Initial progress
                         
@@ -516,7 +624,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                     />
                     <span className="slider">
                       <span className="toggle-text"
-                        onClick={() => setPredictedMedicine(null)} // Hides the display
+                        onClick={() => setPredictedMedicines([])} // Hides the display
                       > {toggleMode}</span>
                     </span>
                   </label>
@@ -559,7 +667,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               </div>
             </div>
   
-            <div
+            {/* <div
               className="scan-image-container"
               onClick={handleScanImageClick}
               style={{
@@ -568,7 +676,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               disabled={!previewImage}
             >
               <span className="scan-image-text">Scan Image</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
