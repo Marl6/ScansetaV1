@@ -71,17 +71,42 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
           <div className="whole-content-container">
             <div className="content-container">
               <div 
-                style={{ color: '#32B8CA', fontSize: "20px" }} /* Sky blue color to match the theme */
+                style={{ color: '#32B8CA', fontSize: "20px" }}
                 dangerouslySetInnerHTML={{ 
                   __html: contentMap[activeButton]
                     // Replace ** with bold tags - also using sky blue for bold text
                     .replace(/\*\*([^*]+)\*\*/g, '<strong style="color: #32B8CA;">$1</strong>')
-                    // Wrap bullet points in a proper unordered list with sky blue color
+                    
+                    // Format main bullet points with bullet symbol
                     .replace(/((^|<br \/>)\s*\*\s(.+?)(<br \/>|$))+/gm, function(match) {
-                      return '<ul style="color: #32B8CA; margin: 0px;">' + match.replace(/\*\s(.+?)(<br \/>|$)/g, '<li>$1</li>') + '</ul>';
+                      return '<ul style="list-style-type: disc; color: #32B8CA; margin: 0px; padding-left: 20px;">' + 
+                             match.replace(/\*\s(.+?)(<br \/>|$)/g, '<li style="color: #32B8CA; margin-bottom: 4px;">$1</li>') + 
+                             '</ul>';
                     })
-                    // Replace individual * at the beginning of lines with - (dash)
-                    .replace(/(^|<br \/>)\s*\*\s/gm, '$1- ')
+                    
+                    // Format sub-items with dashed indentation
+                    .replace(/((^|<br \/>)\s*\+\s(.+?)(<br \/>|$))+/gm, function(match) {
+                      return '<div style="margin-left: 24px;">' + 
+                             match.replace(/(^|<br \/>)\s*\+\s(.+?)(<br \/>|$)/g, 
+                                           '$1<div style="position: relative; margin-bottom: 4px; padding-left: 15px; color: #32B8CA;"><span style="position: absolute; left: 0; color: #32B8CA;">-</span> $2$3</div>') + 
+                             '</div>';
+                    })
+                    
+                    // Clean up any individual asterisks or plus signs that weren't caught
+                    .replace(/(^|<br \/>)\s*\*\s/gm, '$1<span style="color: #32B8CA;">&bull;</span> ')
+                    .replace(/(^|<br \/>)\s*\+\s/gm, '$1<span style="margin-left: 24px; color: #32B8CA;">-</span> ')
+                    
+                    // Clean up extra breaks around elements
+                    .replace(/<br \/><ul/g, '<ul')
+                    .replace(/<\/ul><br \/>/g, '</ul>')
+                    .replace(/<br \/><li/g, '<li')
+                    .replace(/<\/li><br \/>/g, '</li>')
+                    .replace(/<br \/><div style="margin-left: 24px;">/g, '<div style="margin-left: 24px;">')
+                    .replace(/<\/div><br \/>/g, '</div>')
+                    
+                    // Format section titles
+                    .replace(/^([A-Z][\w\s]+:)/gm, '<div style="color: #32B8CA; font-size: 18px; font-weight: bold; margin: 12px 0 6px 0;">$1</div>')
+                    
                     // Replace newlines with line breaks
                     .replace(/\n/g, '<br />')
                 }}
