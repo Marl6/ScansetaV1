@@ -30,6 +30,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [previewImage, setPreviewImage] = useState(null); // State for the image preview
   const [predictedMedicines, setPredictedMedicines] = useState([]); // State to store array of predicted medicine names
+  const [originalMedicines, setOriginalMedicines] = useState([]); // State to track original medicines before removal
   const [toggleMode, setToggleMode] = useState('Upload'); // State for the toggle mode
   const webcamRef = useRef(null); // Reference for the webcam
   const [fadeAnimation, setFadeAnimation] = useState(false);
@@ -259,13 +260,10 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               setScanButtonState('proceed');
               
               // Now proceed with the rest of the handling after reaching 100%
-              // Process scan results
+              // Process scan results - the new structure has medicine-specific data
               setMedicineData({
-                medicine_info: result.medicine_info,
-                medicine_usage: result.medicine_usage,
-                medicine_complication: result.medicine_complication,
-                medicine_hazard: result.medicine_hazard,
-                medicine_emergency: result.medicine_emergency
+                detected_medicines: result.detected_medicines, // Comma-separated list of medicines
+                medicine_data: result.medicine_data, // Medicine-specific information
               });
               
               // Get detected medicines from the API response
@@ -291,6 +289,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               
               console.log('Final detected medicines:', detectedMedicines);
               setPredictedMedicines(detectedMedicines);
+              setOriginalMedicines(detectedMedicines); // Store the original list for reset
               
               // Don't automatically navigate to med info, let user click proceed button
               // goToMedInfo();
@@ -304,13 +303,10 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
           // Update button state to proceed
           setScanButtonState('proceed');
           
-          // Process scan results
+          // Process scan results - using the new medicine-specific data structure
           setMedicineData({
-            medicine_info: result.medicine_info,
-            medicine_usage: result.medicine_usage,
-            medicine_complication: result.medicine_complication,
-            medicine_hazard: result.medicine_hazard,
-            medicine_emergency: result.medicine_emergency
+            detected_medicines: result.detected_medicines, // Comma-separated list of medicines
+            medicine_data: result.medicine_data, // Medicine-specific information
           });
           
           // Get detected medicines from the API response
@@ -336,6 +332,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
           
           console.log('Final detected medicines:', detectedMedicines);
           setPredictedMedicines(detectedMedicines);
+          setOriginalMedicines(detectedMedicines); // Store the original list for reset
           
           // Don't automatically navigate to med info, let user click proceed button
           // goToMedInfo();
@@ -389,14 +386,19 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
     const formattedMedicineName = medicineName.charAt(0).toUpperCase() + medicineName.slice(1).toLowerCase();
   
     try {
-      const response = await fetch(`http://localhost:5000/medicine/${formattedMedicineName}`);
+      // Using port 5001 to match the scan-image endpoint
+      const response = await fetch(`http://localhost:5001/search-medicine-ai/${formattedMedicineName}`);
       if (!response.ok) {
         throw new Error('Failed to fetch medicine info');
       }
       return await response.json();
     } catch (err) {
       console.error(err);
-      return null;
+      // Since we already have the medicine data from scanning, we can use that as a fallback
+      return {
+        // This creates a minimal valid response
+        medicine_name: formattedMedicineName
+      };
     }
   };
 
@@ -407,28 +409,18 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
     }
 
     try {
-      // For multiple medicines, we'll use the first one as the primary medicine
-      // But we'll store all detected medicines in the data
-      const primaryMedicine = predictedMedicines[0];
-      const data = await getMedicineInfo(primaryMedicine);
-      console.log(data); // Log fetched data to inspect its structure
+      // We should navigate directly to the medicine info page with the current medicine list
+      // We've already set the medicine data during scanning, so no need to fetch again
       
-      if (data) {
-        // Add the full list of detected medicines to the data object
-        const enhancedData = {
-          ...data,
-          detected_medicines: predictedMedicines // Store all detected medicines
-        };
-        
-        // Set the medicine data and navigate to the next page
-        setMedicineData(enhancedData); // Pass the enhanced data to the parent component
-        goToMedInfo(primaryMedicine); // Navigate to the next page with primary medicine name
-      } else {
-        setUploadStatus('No data found for this medicine.');
-      }
+      // Direct navigation with current medicine list
+      console.log('Proceeding with medicines:', predictedMedicines);
+      
+      // Just pass the current list of medicines to the MedInfo component
+      // The parent component already has the full medicine data
+      goToMedInfo(predictedMedicines[0]); // Navigate to the next page with primary medicine name
     } catch (err) {
-      console.error('Error fetching data:', err);
-      setUploadStatus('Error fetching data.');
+      console.error('Error processing data:', err);
+      setUploadStatus('Error processing data.');
     }
   };
   
@@ -526,10 +518,15 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                           updatedMedicines.splice(index, 1);
                           setPredictedMedicines(updatedMedicines);
                           
-                          // If all medicines are removed, show reset button
+                          // Show reset button whenever any medicine is removed
+                          // (as long as the original list and current list are different)
+                          if (updatedMedicines.length !== originalMedicines.length) {
+                            setResetButtonNotVisible(true); // Show reset button
+                          }
+                          
+                          // If all medicines are removed, hide the container
                           if (updatedMedicines.length === 0) {
                             setIsDetectedDisplayVisible(false);
-                            setResetButtonNotVisible(true);
                             setProceedButtonNotVisible(false);
                             setProgress(0); // Initial progress
                           }
@@ -545,11 +542,21 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                   <button
                     className="reset-button"
                     onClick={() => {
-                      // Restore detected medicines and show containers
-                      setIsDetectedDisplayVisible(true); // Show the container
-                      setResetButtonNotVisible(false);  // Update reset button visibility
+                      // Restore all original medicines from before any removals
+                      setPredictedMedicines([...originalMedicines]); // Restore using the stored original list
+                      
+                      // Show the medicine container if it was hidden
+                      setIsDetectedDisplayVisible(true);
+                      
+                      // Hide the reset button since we've restored all medicines
+                      setResetButtonNotVisible(false);
+                      
+                      // Make sure the proceed button is visible
                       setProceedButtonNotVisible(true);
+                      
+                      // Restore progress to 100% to indicate complete scanning
                       setProgress(100);
+                      
                       // Set scan button to proceed state
                       setScanButtonState('proceed');
                     }}

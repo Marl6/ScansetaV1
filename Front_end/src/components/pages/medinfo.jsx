@@ -1,56 +1,102 @@
-import React, { useState } from "react";
-import "../css/medinfo.css";
+import React, { useState, useEffect } from 'react';
+import '../css/medinfo.css';
 import back from "../assets/icons/medinfo/back.png"; // Ensure the path is correct
 
 const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }) => {
-  const [activeButton, setActiveButton] = useState("info");
+  const [medicineNames, setMedicineNames] = useState([]);
+  const [activeMedicine, setActiveMedicine] = useState(0);
+  const [activeButton, setActiveButton] = useState('info');
+  const [contentMap, setContentMap] = useState({
+    info: '',
+    usage: '',
+    complication: ''
+  });
+  
+  // New state to store all medicine data
+  const [allMedicineData, setAllMedicineData] = useState({});
 
+  useEffect(() => {
+    // Process medicine data directly from props
+    if (medicineData) {
+      // Extract medicine names from detected_medicines (comma-separated string) or use as an array
+      let medicines = [];
+      if (typeof medicineData.detected_medicines === 'string') {
+        medicines = medicineData.detected_medicines.split(',').map(med => med.trim());
+      } else if (Array.isArray(medicineData.detected_medicines)) {
+        medicines = medicineData.detected_medicines;
+      }
+
+      // Update the medicine names array
+      setMedicineNames(medicines);
+      
+      // Store all medicine data for easy access
+      if (medicineData.medicine_data) {
+        setAllMedicineData(medicineData.medicine_data);
+        
+        // Set initial content for the first medicine (if available)
+        if (medicines.length > 0) {
+          const firstMedicine = medicines[0];
+          const medicineSpecificData = medicineData.medicine_data[firstMedicine] || {};
+          
+          setContentMap({
+            info: medicineSpecificData.medicine_info || 'No information available',
+            usage: medicineSpecificData.medicine_usage || 'No usage information available',
+            complication: medicineSpecificData.medicine_complication || 'No complication information available'
+          });
+        }
+      } else {
+        // Fallback for old data structure if needed
+        setContentMap({
+          info: medicineData.medicine_info || 'No information available',
+          usage: medicineData.medicine_usage || 'No usage information available',
+          complication: medicineData.medicine_complication || 'No complication information available'
+        });
+      }
+    }
+  }, [medicineData]);
+
+  // Handle button clicks for info/usage/complication tabs
   const handleButtonClick = (buttonId) => {
     setActiveButton(buttonId);
   };
 
-  // Define the content dynamically based on activeButton
-  const contentMap = {
-    info: medicineData.medicine_info || "No information available",
-    usage: medicineData.medicine_usage || "No usage details available",
-    complication: medicineData.medicine_complication || "No complication details available",
-    //hazard: medicineData.medicine_hazard || "No hazard details available",
-    //emergency: medicineData.medicine_emergency || "No emergency details available",
+  // Handle medicine button clicks - now uses medicine-specific data
+  const handleMedicineClick = (index) => {
+    setActiveMedicine(index);
+    
+    // Get the medicine name at this index
+    const medicineName = medicineNames[index];
+    
+    // Get the specific data for this medicine
+    if (medicineName && allMedicineData[medicineName]) {
+      const medicineSpecificData = allMedicineData[medicineName];
+      
+      // Update the content map with this medicine's data
+      setContentMap({
+        info: medicineSpecificData.medicine_info || 'No information available',
+        usage: medicineSpecificData.medicine_usage || 'No usage information available',
+        complication: medicineSpecificData.medicine_complication || 'No complication information available'
+      });
+    }
+  };
+
+  // Go back to the previous page based on source
+  const handleBackClick = () => {
+    if (source === "upload") {
+      goBackToUploadFile(); // Go back to the UploadFile page
+    } else if (source === "search") {
+      goBackToSearchMed(); // Go back to the SearchMed page
+    } else {
+      // Default fallback
+      goBackToUploadFile();
+    }
   };
 
   const headerTextMap = {
     info: "Information",
     usage: "Usage",
     complication: "Complication",
-    //hazard: "Hazard",
-    //emergency: "Emergency",
   };
-
-  // Dynamic back button handler based on source
-  const handleBackClick = () => {
-    if (source === "upload") {
-      goBackToUploadFile(); // Go back to the UploadFile page
-    } else if (source === "search") {
-      goBackToSearchMed(); // Go back to the SearchMed page
-    }
-  };
-
-  // const parseText = (text) => {
-  //   const parsedText = text.split("**").map((chunk, index) => {
-  //     if (index % 2 !== 0) {
-  //       return <strong key={index}>{chunk}</strong>;
-  //     } else {
-  //       const bulletText = chunk.split("*").map((subChunk, subIndex) => {
-  //         if (subIndex % 2 !== 0) {
-  //           return <li key={subIndex}>{subChunk}</li>;
-  //         }
-  //         return subChunk;
-  //       });
-  //       return bulletText;
-  //     }
-  //   });
-  //   return parsedText;
-  // };
 
   return (
     <div className="dashboard">
@@ -58,6 +104,17 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
         <button className="back-button" onClick={handleBackClick}>
           <img src={back} alt="Back" className="back-icon" />
         </button>
+        <div className="medicine-name-container">
+          {medicineNames.map((medicine, index) => (
+            <button 
+              key={`medicine-${index}`}
+              className={`medicine-name-button ${index === activeMedicine ? 'active' : ''}`}
+              onClick={() => handleMedicineClick(index)}
+            >
+              {medicine}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="overall-container">

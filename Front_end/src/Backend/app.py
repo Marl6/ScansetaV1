@@ -127,46 +127,106 @@ def scan_image():
         # Update progress - image encoded
         scan_progress = 20
 
-        prompts = {
-            "detected_medicines": "What are the medicine names detected in this image? Please provide ONLY the names separated by commas without any additional text, explanations, or formatting. Example output format: 'Amoxicillin, Losartan'",
-            "medicine_info": "Act like a pharmacist and provide detailed information about the medicine in this image. On the contents(text) that will be provided it must be formatted properly.",
-            "medicine_usage": "Describe the proper usage and dosage of the medicine shown in this image.",
-            "medicine_complication": "List possible complications, side effects, and contraindications of the medicine in this image.",
-            # "medicine_hazard": "Put also the hazard or what will happen to them if they will not take this medicine.",
-            # "medicine_emergency": "Based on the prescription scanned, please provide information on the symptoms when to go to the doctor if the prescription is not taken, or not taken properly."
+        # First, detect all medicines in the image
+        initial_prompt = {
+            "detected_medicines": "What are the medicine names detected in this image? Please provide ONLY the names separated by commas without any additional text, explanations, or formatting. Example output format: 'Amoxicillin, Losartan'"
         }
-
-        responses = {}
-        total_prompts = len(prompts)
-        progress_per_prompt = 60 / total_prompts  # 60% of progress distributed across prompts
-
-        for i, (key, prompt) in enumerate(prompts.items()):
-            # Update progress for each prompt processing
-            scan_progress = 20 + int(i * progress_per_prompt)
+        
+        # Get the list of detected medicines first
+        medicine_response = client.chat.completions.create(
+            model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": initial_prompt["detected_medicines"]},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                    ],
+                }
+            ]
+        )
+        
+        # Extract detected medicines
+        detected_medicines_text = ""
+        if medicine_response.choices and len(medicine_response.choices) > 0:
+            detected_medicines_text = medicine_response.choices[0].message.content
+        
+        # Parse the comma-separated list into individual medicine names
+        detected_medicines = [med.strip() for med in detected_medicines_text.split(',') if med.strip()]
+        
+        # If no medicines were detected, use a generic approach
+        if not detected_medicines:
+            detected_medicines = ["Medicine"]
             
-            response = client.chat.completions.create(
-                model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
-                # model="Qwen/Qwen2.5-VL-72B-Instruct",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                        ],
-                    }
-                ]
-            )
-
-            if response.choices and len(response.choices) > 0:
-                responses[key] = response.choices[0].message.content
-            else:
-                responses[key] = "No content received from LLaMA."
+        print(f"Detected medicines: {detected_medicines}")
+        
+        # Update scan progress after detecting medicines
+        scan_progress = 30
+        
+        # Dictionary to store medicine-specific information
+        medicine_data = {}
+        
+        # Base prompts for each type of information
+        base_prompts = {
+            "medicine_info": "Analyze this prescription or medicine image and describe what is visible for {medicine}. Extract all details from the image such as medicine name, form (tablet, capsule, etc.), prescription details, doctor's information, patient instructions, etc. ONLY report what you can actually see in the image. Format your response with bullet points.",
+            
+            "medicine_usage": "Based on the image, describe how to take {medicine}. Include dosage instructions, frequency, timing (before/after meals), duration, and any special instructions that appear on the prescription or packaging. If you can see specific mg/ml dosage information, include that. Format with bullet points.",
+            
+            "medicine_complication": "Provide general information about the potential side effects, complications, and contraindications of {medicine}. You can provide common and important information about this medicine even if not visible in the image. List allergic reactions, common side effects, and when to contact a doctor. Format as a comprehensive list.",
+            
+            # "medicine_hazard": "Describe the potential hazards or consequences if {medicine} is not taken as prescribed. This can be general information about the medicine, not limited to what's in the image.",
+            
+            # "medicine_emergency": "Provide information about when to seek emergency care related to {medicine}, including severe adverse reactions or overdose symptoms. This can be general advice, not limited to what's in the image."
+        }
+        
+        # Calculate progress increment per medicine per prompt
+        total_prompt_count = len(detected_medicines) * len(base_prompts)
+        progress_per_prompt = 60 / total_prompt_count if total_prompt_count > 0 else 60
+        
+        # Process each medicine separately
+        for medicine_index, medicine_name in enumerate(detected_medicines):
+            medicine_data[medicine_name] = {}
+            
+            # For each medicine, create specific prompts
+            medicine_prompts = {}
+            for prompt_key, prompt_template in base_prompts.items():
+                medicine_prompts[prompt_key] = prompt_template.format(medicine=medicine_name)
+            
+            # Process each prompt for this medicine
+            for prompt_index, (key, prompt) in enumerate(medicine_prompts.items()):
+                # Update progress for each prompt processing
+                scan_progress = 30 + int((medicine_index * len(base_prompts) + prompt_index) * progress_per_prompt)
                 
-            # Update progress after each prompt is processed
-            scan_progress = 20 + int((i + 1) * progress_per_prompt)
+                response = client.chat.completions.create(
+                    model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                            ],
+                        }
+                    ]
+                )
+                
+                if response.choices and len(response.choices) > 0:
+                    medicine_data[medicine_name][key] = response.choices[0].message.content
+                else:
+                    medicine_data[medicine_name][key] = f"No {key.replace('medicine_', '')} data available for {medicine_name}"
 
-        # Final processing and formatting
+        # We've already processed all prompts in the medicine-specific approach above
+        # Now scan_progress should be close to 90%
+        scan_progress = 90
+        
+        # Prepare the final response format
+        # We'll have one flat response with the detected_medicines list
+        # and separate medicine data for each detected medicine
+        responses = {
+            "detected_medicines": detected_medicines_text  # This is the comma-separated list as a string
+        }
+        
+        # Indicate that processing is complete
         scan_progress = 100
         
         # Use a safer print method that handles Unicode characters
@@ -184,11 +244,7 @@ def scan_image():
         return jsonify({
             'message': 'Image processed successfully',
             'detected_medicines': responses["detected_medicines"],
-            'medicine_info': responses["medicine_info"],
-            'medicine_usage': responses["medicine_usage"],
-            'medicine_complication': responses["medicine_complication"],
-            # 'medicine_hazard': responses["medicine_hazard"],
-            # 'medicine_emergency': responses["medicine_emergency"],
+            'medicine_data': medicine_data,  # This contains all medicine-specific information
             'progress': 100
         }), 200
 
