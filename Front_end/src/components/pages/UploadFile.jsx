@@ -412,12 +412,39 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       // We should navigate directly to the medicine info page with the current medicine list
       // We've already set the medicine data during scanning, so no need to fetch again
       
-      // Direct navigation with current medicine list
-      console.log('Proceeding with medicines:', predictedMedicines);
+      // Create an updated medicine data object with the current list of medicines
+      // This ensures only the remaining medicines (after user removal) are sent to MedInfo
+      const updatedMedicineData = {
+        detected_medicines: predictedMedicines.join(','), // Join as comma-separated string
+        medicine_data: {} // We'll populate this with only the remaining medicines
+      };
       
-      // Just pass the current list of medicines to the MedInfo component
-      // The parent component already has the full medicine data
-      goToMedInfo(predictedMedicines[0]); // Navigate to the next page with primary medicine name
+      // Get the last set medicine data (which has all medicine info)
+      const currentMedicineData = await new Promise(resolve => {
+        // This is a hack to get the current medicineData from the parent
+        // We first set a dummy value, then immediately call the callback which gives us the updated state
+        setMedicineData(prev => {
+          resolve(prev);
+          return prev; // Return the same state to avoid an actual state change
+        });
+      });
+      
+      // Only include data for medicines that haven't been removed
+      if (currentMedicineData && currentMedicineData.medicine_data) {
+        predictedMedicines.forEach(medicine => {
+          if (currentMedicineData.medicine_data[medicine]) {
+            updatedMedicineData.medicine_data[medicine] = currentMedicineData.medicine_data[medicine];
+          }
+        });
+      }
+      
+      console.log('Proceeding with filtered medicines:', predictedMedicines);
+      
+      // Update the medicine data with only the remaining medicines
+      setMedicineData(updatedMedicineData);
+      
+      // Navigate to the medicine info page with all remaining medicines
+      goToMedInfo(predictedMedicines[0]); // We still pass the first medicine as the primary one
     } catch (err) {
       console.error('Error processing data:', err);
       setUploadStatus('Error processing data.');
