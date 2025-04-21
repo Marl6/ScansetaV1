@@ -36,11 +36,11 @@ const Dashboard = ({ goToDashboard2, goToDashboard3, goToDashboard4 }) => {
 
       <div className="divider-dashboard"></div>
 
-      <button onClick={goToDashboard4}>
+      {/* <button onClick={goToDashboard4}>
         <img src={talkIcon} alt="Search Icon" className="button-image" />
         <h2>Voice</h2>
         <p>Talk to Marl AI</p>
-      </button>
+      </button> */}
     </div>
 
     {/* AI Floating Button */}
