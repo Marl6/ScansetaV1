@@ -522,5 +522,58 @@ def get_chat_progress():
     global chat_progress
     return jsonify({'progress': chat_progress})
 
+@app.route('/validate-medicines', methods=['POST'])
+def validate_medicines():
+    try:
+        # Get the list of medicines from the request
+        data = request.get_json()
+        if not data or 'medicines' not in data:
+            return jsonify({'error': 'No medicines provided'}), 400
+        
+        medicines_to_validate = data['medicines']
+        validated_medicines = []
+        
+        # Validate each medicine against RxNorm
+        for medicine in medicines_to_validate:
+            # Call RxNorm API for approximate match
+            url = f"https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term={medicine}&maxEntries=5"
+            response = requests.get(url)
+            data = response.json()
+            
+            # Check if any results were found
+            found = False
+            best_match = None
+            best_score = 0
+            
+            if 'approximateGroup' in data and 'candidate' in data['approximateGroup']:
+                candidates = data['approximateGroup']['candidate']
+                if candidates:
+                    # Find the best match (highest score)
+                    for candidate in candidates:
+                        if 'score' in candidate and 'name' in candidate:
+                            if float(candidate['score']) > best_score:
+                                best_score = float(candidate['score'])
+                                best_match = candidate['name']
+                    
+                    # If score is above threshold, consider it validated
+                    if best_score >= 70:  # Adjust threshold as needed
+                        found = True
+                    
+            # If found in RxNorm, add to validated list
+            if found and best_match:
+                validated_medicines.append(best_match)  # Use the standardized name
+            elif found:
+                validated_medicines.append(medicine)  # Use original name if no better match
+        
+        return jsonify({
+            'validated_medicines': validated_medicines,
+            'original_count': len(medicines_to_validate),
+            'validated_count': len(validated_medicines)
+        })
+        
+    except Exception as e:
+        print(f"Error validating medicines: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

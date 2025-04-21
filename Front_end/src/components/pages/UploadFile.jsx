@@ -42,6 +42,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   const [isProceedtButtonNotVisible, setProceedButtonNotVisible] = useState(false); // State for controlling visibility
   const [progress, setProgress] = useState(0); // State for progress bar
   const [scanButtonState, setScanButtonState] = useState('hidden'); // 'hidden', 'scan', 'loading', 'proceed'
+  const [isLoading, setIsLoading] = useState(false); // State to track loading during medicine validation
   
   // Fuse.js options for fuzzy matching
   const fuse = new Fuse(validMedicines, {
@@ -65,6 +66,58 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
     }
     console.log('Preview image updated:', previewImage); 
   }, [previewImage, predictedMedicines.length]); // Dependencies
+  
+  // Function to validate medicines against RxNorm
+  const validateMedicinesWithRxNorm = async (medicines) => {
+    try {
+      setIsLoading(true);
+      console.log('Validating medicines with RxNorm:', medicines);
+      
+      // Call the validate-medicines endpoint
+      const response = await fetch('http://127.0.0.1:5001/validate-medicines', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ medicines }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('Validated medicines:', data.validated_medicines);
+        console.log(`Original count: ${data.original_count}, Validated count: ${data.validated_count}`);
+        
+        // Use validated medicines if any exist, otherwise fall back to original
+        const finalMedicines = data.validated_medicines.length > 0 
+          ? data.validated_medicines 
+          : medicines;
+        
+        console.log('Final detected medicines:', finalMedicines);
+        setPredictedMedicines(finalMedicines);
+        setOriginalMedicines(finalMedicines); // Store the original list for reset
+      } else {
+        console.error('Error validating medicines:', data.error);
+        // Fall back to the original medicines
+        setPredictedMedicines(medicines);
+        setOriginalMedicines(medicines);
+      }
+    } catch (error) {
+      console.error('Error validating medicines:', error);
+      // Fall back to the original medicines
+      setPredictedMedicines(medicines);
+      setOriginalMedicines(medicines);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleReset = () => {
+    // Reset to the original list of medicines
+    setPredictedMedicines(originalMedicines);
+  };
+
+
   
   // Cleanup effect for progress polling interval
   useEffect(() => {
@@ -279,17 +332,18 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                   .filter(name => name.length > 0);
                 
                 console.log('Detected medicines from API:', detectedMedicines);
-              }
-              
-              // If no medicines were detected, add a placeholder
-              if (!detectedMedicines || detectedMedicines.length === 0) {
+                
+                // Validate medicines against RxNorm database
+                validateMedicinesWithRxNorm(detectedMedicines);
+              } else {
+                // If no medicines were detected, add a placeholder
                 detectedMedicines = ['Medicine detected']; // Generic placeholder
                 console.log('No medicines detected, using placeholder');
+                
+                // Set the medicines state directly since no validation needed
+                setPredictedMedicines(detectedMedicines);
+                setOriginalMedicines(detectedMedicines); // Store the original list for reset
               }
-              
-              console.log('Final detected medicines:', detectedMedicines);
-              setPredictedMedicines(detectedMedicines);
-              setOriginalMedicines(detectedMedicines); // Store the original list for reset
               
               // Don't automatically navigate to med info, let user click proceed button
               // goToMedInfo();
