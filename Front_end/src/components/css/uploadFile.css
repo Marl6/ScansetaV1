@@ -446,7 +446,7 @@ html, body {
   .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 12vh; /* Adjust the toggle width */
+    width: 10vh; /* Adjust the toggle width */
     height: 30px; /* Height of the toggle */
     border: 2px solid #32b8ca; /* Border color */
     border-radius: 20px; /* Rounded corners */
@@ -466,13 +466,11 @@ html, body {
 
   
   .slider {
-      margin-right: 5px;
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      width: 12vh;
       background-color: #ffffff00; /* Default background color */
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for knob */
       border-radius: 20px;
