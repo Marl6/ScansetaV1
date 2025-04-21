@@ -104,8 +104,7 @@
 }
 
 .button-image {
-    width: 27%; /* Adjust image size as needed */
-    height: 45%;
+    height: 35%;
     object-fit: cover;
     margin-bottom: 10px;
 }
