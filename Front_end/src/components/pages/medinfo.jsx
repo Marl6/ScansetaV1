@@ -78,7 +78,7 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
                     .replace(/\*\*([^*]+)\*\*/g, '<strong style="color: #32B8CA;">$1</strong>')
                     // Wrap bullet points in a proper unordered list with sky blue color
                     .replace(/((^|<br \/>)\s*\*\s(.+?)(<br \/>|$))+/gm, function(match) {
-                      return '<ul style="color: #32B8CA;">' + match.replace(/\*\s(.+?)(<br \/>|$)/g, '<li>$1</li>') + '</ul>';
+                      return '<ul style="color: #32B8CA; margin: 0px;">' + match.replace(/\*\s(.+?)(<br \/>|$)/g, '<li>$1</li>') + '</ul>';
                     })
                     // Replace individual * at the beginning of lines with - (dash)
                     .replace(/(^|<br \/>)\s*\*\s/gm, '$1- ')

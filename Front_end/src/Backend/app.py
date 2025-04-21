@@ -15,6 +15,8 @@ import threading
 import time
 import requests  # For making HTTP requests to RxNorm API
 
+from groq import Groq
+
 # Load environment variables from .env file FIRST
 load_dotenv()
 
@@ -84,6 +86,10 @@ def encode_image(image_path):
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 client = Together(api_key=TOGETHER_API_KEY)
 
+# Groq AI configuration
+GROQ_API_KEY = "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"
+groq_client = Groq(api_key=GROQ_API_KEY)
+
 @app.route('/scan-image', methods=['POST'])
 def scan_image():
     global scan_progress
@@ -139,6 +145,7 @@ def scan_image():
             
             response = client.chat.completions.create(
                 model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+                # model="Qwen/Qwen2.5-VL-72B-Instruct",
                 messages=[
                     {
                         "role": "user",
@@ -161,7 +168,14 @@ def scan_image():
         # Final processing and formatting
         scan_progress = 100
         
-        print("Responses:", responses)  # Debugging
+        # Use a safer print method that handles Unicode characters
+        try:
+            print("Responses received successfully")
+            # If you need to see response content, use this safer approach:
+            # for key, value in responses.items():
+            #     print(f"{key}: {value[:100]}...") # Print just the first 100 chars
+        except Exception as print_error:
+            print(f"Error printing responses: {str(print_error)}")
         
         # Complete
         scan_progress = 100
@@ -255,8 +269,8 @@ def search_medicine_ai(medicine_name):
     
     try:
         # Verify API key is available
-        if not TOGETHER_API_KEY:
-            print("ERROR: TOGETHER_API_KEY not found or empty in environment variables!")
+        if not GROQ_API_KEY:
+            print("ERROR: GROQ_API_KEY not found or empty in environment variables!")
             return jsonify({'error': 'API key not configured'}), 500, response_headers
             
         print(f"Processing search request for medicine: {medicine_name}")
@@ -271,15 +285,13 @@ def search_medicine_ai(medicine_name):
         responses = {}
         
         # Use the Llama model to generate responses for each prompt
-        print(f"Using model: meta-llama/Llama-3.3-70B-Instruct with API key: {TOGETHER_API_KEY[:5]}...")
+        print(f"Using model: llama3-70b-8192 with API key: {GROQ_API_KEY[:5]}...")
         
         for key, prompt in prompts.items():
             print(f"Generating {key} for {medicine_name}...")
             try:
-                response = client.chat.completions.create(
-                    # model="meta-llama/Llama-3.3-70B-Instruct", # Using the Llama-3.3-70B-Instruct model as requested
-                    # model="mistralai/Mixtral-8x7B-Instruct-v0.1",
-                    model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+                response = groq_client.chat.completions.create(
+                    model="llama3-70b-8192",  # Groq's LLaMA 3 70B model
                     messages=[
                         {
                             "role": "user",
