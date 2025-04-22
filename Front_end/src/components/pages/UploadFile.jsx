@@ -780,17 +780,27 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                       onChange={(e) => {
                         const mode = e.target.checked ? "Camera" : "Upload";
                         setToggleMode(mode);
-                        setPreviewImage(null); // Clear webcam feed
-                        setPredictedMedicines([]); 
+                        // Reset all relevant state for a fresh start
+                        setSelectedFile(null);
+                        setUploadStatus('');
+                        setPreviewImage(null);
+                        setPredictedMedicines([]);
+                        setOriginalMedicines([]);
                         setProceedButtonNotVisible(false);
-                        setProgress(0); // Initial progress
-                        
+                        setProgress(0);
+                        setStatusMessage('');
+                        setScanButtonState('hidden');
+                        setIsLoading(false);
+                        setShowWarning(false);
+                        setShowMedicineDisplay(true);
+                        setIsDetectedDisplayVisible(true);
+                        setResetButtonNotVisible(false);
                       }}
                     />
                     <span className="slider">
-                      <span className="toggle-text"
-                        onClick={() => setPredictedMedicines([])} // Hides the display
-                      > {toggleMode}</span>
+                      <span className="toggle-text">
+                        {toggleMode}
+                      </span>
                     </span>
                   </label>
                 </div>
