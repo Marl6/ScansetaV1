@@ -15,6 +15,29 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
   // New state to store all medicine data
   const [allMedicineData, setAllMedicineData] = useState({});
 
+  // Function to normalize medicine name for consistent lookup
+  const normalizeMedicineName = (name) => {
+    return name.trim().toLowerCase();
+  };
+
+  // Function to find a medicine in allMedicineData using normalized name
+  const findMedicineData = (medicineName, medicineDataObj) => {
+    if (!medicineName || !medicineDataObj) return null;
+    
+    // Direct lookup first
+    if (medicineDataObj[medicineName]) {
+      return medicineDataObj[medicineName];
+    }
+    
+    // Try normalized lookup
+    const normalizedName = normalizeMedicineName(medicineName);
+    const medicineKey = Object.keys(medicineDataObj).find(key => 
+      normalizeMedicineName(key) === normalizedName
+    );
+    
+    return medicineKey ? medicineDataObj[medicineKey] : null;
+  };
+
   useEffect(() => {
     // Process medicine data directly from props
     if (medicineData) {
@@ -36,7 +59,7 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
         // Set initial content for the first medicine (if available)
         if (medicines.length > 0) {
           const firstMedicine = medicines[0];
-          const medicineSpecificData = medicineData.medicine_data[firstMedicine] || {};
+          const medicineSpecificData = findMedicineData(firstMedicine, medicineData.medicine_data) || {};
           
           setContentMap({
             info: medicineSpecificData.medicine_info || 'No information available',
@@ -67,15 +90,23 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
     // Get the medicine name at this index
     const medicineName = medicineNames[index];
     
-    // Get the specific data for this medicine
-    if (medicineName && allMedicineData[medicineName]) {
-      const medicineSpecificData = allMedicineData[medicineName];
-      
+    // Find the medicine data using our helper function
+    const medicineSpecificData = findMedicineData(medicineName, allMedicineData);
+    
+    if (medicineSpecificData) {
       // Update the content map with this medicine's data
       setContentMap({
         info: medicineSpecificData.medicine_info || 'No information available',
         usage: medicineSpecificData.medicine_usage || 'No usage information available',
         complication: medicineSpecificData.medicine_complication || 'No complication information available'
+      });
+    } else {
+      console.warn(`No data found for medicine: "${medicineName}"`);
+      // Fallback to empty content if no data found
+      setContentMap({
+        info: `No information available for ${medicineName}`,
+        usage: `No usage information available for ${medicineName}`,
+        complication: `No complication information available for ${medicineName}`
       });
     }
   };
