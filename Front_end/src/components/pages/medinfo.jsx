@@ -213,8 +213,12 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
                     // Format section titles
                     .replace(/^([A-Z][\w\s]+:)/gm, '<div style="color: #32B8CA; font-size: 18px; font-weight: bold; margin: 12px 0 6px 0;">$1</div>')
                     
+                    // Replace ### headings with * format
+                    .replace(/###\s+([^\n]+)/g, '$1')
+                    
                     // Replace newlines with line breaks
                     .replace(/\n/g, '<br />')
+
                 }}
               />
             </div>
