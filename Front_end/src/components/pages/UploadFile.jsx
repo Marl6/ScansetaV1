@@ -43,6 +43,13 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
   const [progress, setProgress] = useState(0); // State for progress bar
   const [scanButtonState, setScanButtonState] = useState('hidden'); // 'hidden', 'scan', 'loading', 'proceed'
   const [isLoading, setIsLoading] = useState(false); // State to track loading during medicine validation
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false); // State for confirmation modal
+  const [confirmationModalData, setConfirmationModalData] = useState({
+    title: '',
+    message: '',
+    onConfirm: () => {}, // Default empty function
+    onCancel: () => {}, // Default empty function
+  });
   
   // Fuse.js options for fuzzy matching
   const fuse = new Fuse(validMedicines, {
@@ -88,14 +95,26 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
         console.log('Validated medicines:', data.validated_medicines);
         console.log(`Original count: ${data.original_count}, Validated count: ${data.validated_count}`);
         
-        // Use validated medicines if any exist, otherwise fall back to original
+        // Use validated medicines if any exist, otherwise set to empty array
+        // This ensures Final detected medicines is empty when no medicines are validated
         const finalMedicines = data.validated_medicines.length > 0 
           ? data.validated_medicines 
-          : medicines;
+          : [];
         
         console.log('Final detected medicines:', finalMedicines);
         setPredictedMedicines(finalMedicines);
         setOriginalMedicines(finalMedicines); // Store the original list for reset
+        
+        // Update scan button state based on validation results
+        if (finalMedicines.length === 0) {
+          // If no medicines were validated, hide the scan button
+          setScanButtonState('hidden');
+          setStatusMessage('No valid medicines detected');
+          setTimeout(() => setStatusMessage(''), 3000);
+        } else {
+          // Only set to proceed if we have valid medicines
+          setScanButtonState('proceed');
+        }
       } else {
         console.error('Error validating medicines:', data.error);
         // Fall back to the original medicines
@@ -316,8 +335,8 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
               setStatusMessage('Scan successful');
               setTimeout(() => setStatusMessage(''), 3000);
               
-              // Update button state to proceed
-              setScanButtonState('proceed');
+              // Don't set button state to proceed yet - will be set after validation completes
+              // Only if valid medicines are found
               
               // Now proceed with the rest of the handling after reaching 100%
               // Process scan results - the new structure has medicine-specific data
@@ -350,6 +369,9 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                 // Set the medicines state directly since no validation needed
                 setPredictedMedicines(detectedMedicines);
                 setOriginalMedicines(detectedMedicines); // Store the original list for reset
+                
+                // Set button state to proceed since we have a placeholder medicine
+                setScanButtonState('proceed');
               }
               
               // Don't automatically navigate to med info, let user click proceed button
@@ -361,8 +383,8 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
           setStatusMessage('Scan successful');
           setTimeout(() => setStatusMessage(''), 3000);
           
-          // Update button state to proceed
-          setScanButtonState('proceed');
+          // Don't set button state to proceed yet - will be handled after validation
+          // setScanButtonState('proceed');
           
           // Process scan results - using the new medicine-specific data structure
           setMedicineData({
@@ -549,9 +571,10 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       <div className="overall-upload-container">
   
         <div className="proceed-viewinfo-button">
-          {scanButtonState !== 'hidden' && (
+          {scanButtonState !== 'hidden' && previewImage && (
           <button
             className={`viewinfo-button ${scanButtonState === 'loading' ? 'loading' : ''}`}
+            data-state={scanButtonState === 'proceed' ? 'proceed' : 'scan'}
             onClick={() => {
               if (scanButtonState === 'scan') {
                 // Start scanning process
@@ -562,13 +585,24 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                 handleProceed();
               }
             }}
-            style={{
-              cursor: scanButtonState === 'loading' ? "wait" : "pointer",
-            }}
           >
-            {scanButtonState === 'scan' && <span>Scan</span>}
+            {scanButtonState === 'scan' && (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Scan</span>
+              </>
+            )}
             {scanButtonState === 'loading' && <span className="loading-icon">⟳</span>}
-            {scanButtonState === 'proceed' && <span>Proceed to View Information</span>}
+            {scanButtonState === 'proceed' && (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Proceed to View Information</span>
+              </>
+            )}
           </button>
           )}
           {showWarning &&
@@ -598,25 +632,52 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                   {isDetectedDisplayVisible && predictedMedicines.map((medicine, index) => (
                     <div className="medicine-detected-display" key={`medicine-${index}`}>
                       <p className="predicted-medicine">{medicine}</p>
-                      <button
+                       <button
                         className="medicine-remove-button"
                         onClick={() => {
-                          // Remove this specific medicine from the array
-                          const updatedMedicines = [...predictedMedicines];
-                          updatedMedicines.splice(index, 1);
-                          setPredictedMedicines(updatedMedicines);
-                          
-                          // Show reset button whenever any medicine is removed
-                          // (as long as the original list and current list are different)
-                          if (updatedMedicines.length !== originalMedicines.length) {
-                            setResetButtonNotVisible(true); // Show reset button
-                          }
-                          
-                          // If all medicines are removed, hide the container
-                          if (updatedMedicines.length === 0) {
-                            setIsDetectedDisplayVisible(false);
-                            setProceedButtonNotVisible(false);
-                            setProgress(0); // Initial progress
+                          // Check if this is the last medicine in the list
+                          if (predictedMedicines.length === 1) {
+                            // Show custom confirmation dialog
+                            setConfirmationModalData({
+                              title: 'Remove Last Medicine',
+                              message: 'Medicines are empty, are you sure you want to start again?',
+                              onConfirm: () => {
+                                // User confirmed, remove the medicine
+                                setPredictedMedicines([]);
+                                setIsDetectedDisplayVisible(false);
+                                setProceedButtonNotVisible(false);
+                                setProgress(0); // Initial progress
+                                
+                                // Show reset button if original list is different
+                                if (originalMedicines.length > 0) {
+                                  setResetButtonNotVisible(true);
+                                }
+                                
+                                setShowConfirmationModal(false);
+                              },
+                              onCancel: () => {
+                                // User canceled, hide the modal
+                                setShowConfirmationModal(false);
+                              }
+                            });
+                            setShowConfirmationModal(true);
+                          } else {
+                            // Not the last medicine, proceed with normal removal
+                            const updatedMedicines = [...predictedMedicines];
+                            updatedMedicines.splice(index, 1);
+                            setPredictedMedicines(updatedMedicines);
+                            
+                            // Show reset button whenever any medicine is removed
+                            if (originalMedicines.length !== updatedMedicines.length) {
+                              setResetButtonNotVisible(true);
+                            }
+                            
+                            // If all medicines are removed, hide the container
+                            if (updatedMedicines.length === 0) {
+                              setIsDetectedDisplayVisible(false);
+                              setProceedButtonNotVisible(false);
+                              setProgress(0);
+                            }
                           }
                         }}
                       >
@@ -776,11 +837,40 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
           </div>
         </div>
       </div>
+      <div className="upload-status">{uploadStatus}</div>
 
-      <div className="footer"></div>
-      
+      {/* Custom Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        title={confirmationModalData.title}
+        message={confirmationModalData.message}
+        onConfirm={confirmationModalData.onConfirm}
+        onCancel={confirmationModalData.onCancel}
+      />
     </div>
   );
-}
+};
   
+// Custom Confirmation Modal Component
+const ConfirmationModal = ({ isOpen, onClose, title, message, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="confirmation-modal-overlay">
+      <div className="confirmation-modal">
+        <div className="confirmation-modal-header">
+          <div className="confirmation-modal-icon">⚠️</div>
+          <h2 className="confirmation-modal-title">{title}</h2>
+        </div>
+        <div className="confirmation-modal-message">{message}</div>
+        <div className="confirmation-modal-actions">
+          <button className="confirmation-cancel-button" onClick={onCancel || onClose}>Cancel</button>
+          <button className="confirmation-confirm-button" onClick={onConfirm}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default UploadFile;

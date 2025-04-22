@@ -177,29 +177,73 @@ html, body {
   height: 10%;
 }
 
-.viewinfo-button{
-  padding: 10px 30px;
+/* Modern, visually appealing button with different states */
+.viewinfo-button {
+  padding: 12px 24px;
   margin-top: 20px;
   margin-right: 50px;
-  height: 80%;
-  background-color:#33b3c4;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  height: 50px;
+  background-color: #32B8CA;
+  background-image: linear-gradient(135deg, #32B8CA, #278e9d);
+  border-radius: 12px;
+  box-shadow: 0 8px 15px rgba(50, 184, 202, 0.2);
   color: white;
   border: none;
   display: flex;
-  gap: 10px;
+  justify-content: center;
   align-items: center;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
 }
 
+/* Button hover effect */
 .viewinfo-button:hover {
-  background-color: #11646e;
-  border-radius: 100px;
-  }
+  background-image: linear-gradient(135deg, #278e9d, #32B8CA);
+  box-shadow: 0 10px 20px rgba(50, 184, 202, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Button active/click effect */
+.viewinfo-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 5px 10px rgba(50, 184, 202, 0.2);
+}
+
+/* Scan button specific styling */
+.viewinfo-button:not(.loading):not([data-state="proceed"]) {
+  background-image: linear-gradient(135deg, #32B8CA, #3ccfe3);
+}
+
+/* Proceed button specific styling */
+.viewinfo-button[data-state="proceed"] {
+  background-image: linear-gradient(135deg, #238e8e, #32B8CA);
+  min-width: 220px;
+}
+
+/* Loading state animation */
+.viewinfo-button.loading {
+  background-image: linear-gradient(135deg, #278e9d, #32B8CA);
+  cursor: wait;
+  opacity: 0.9;
+}
+
+.viewinfo-button .loading-icon {
+  animation: spin 1.5s linear infinite;
+  display: inline-block;
+  font-size: 20px;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 .reset-button {
   margin-bottom: 30px;
@@ -273,7 +317,99 @@ html, body {
   font-size: 12px;
 }
 
+/* Custom Confirmation Modal Styles */
+.confirmation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
 
+.confirmation-modal {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  animation: bounceFadeIn 0.4s ease;
+}
+
+.confirmation-modal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.confirmation-modal-icon {
+  background-color: rgba(50, 184, 202, 0.15);
+  color: #32B8CA;
+  padding: 10px;
+  border-radius: 50%;
+  margin-right: 15px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirmation-modal-title {
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.confirmation-modal-message {
+  color: #555;
+  margin: 15px 0;
+  line-height: 1.4;
+  font-size: 16px;
+}
+
+.confirmation-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.confirmation-cancel-button {
+  background-color: #f1f1f1;
+  color: #555;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.confirmation-cancel-button:hover {
+  background-color: #e1e1e1;
+}
+
+.confirmation-confirm-button {
+  background-color: #32B8CA;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.confirmation-confirm-button:hover {
+  background-color: #28a2b5;
+}
 
 
 .image-display{
@@ -686,7 +822,6 @@ html, body {
     align-items: center;
     margin-bottom: 20px;
   }
-  
   
   .scan-image-button {
     position: absolute; /* Position it relative to the image */

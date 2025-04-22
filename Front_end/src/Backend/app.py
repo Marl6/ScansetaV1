@@ -556,7 +556,7 @@ def validate_medicines():
                                 best_match = candidate['name']
                     
                     # If score is above threshold, consider it validated
-                    if best_score >= 70:  # Adjust threshold as needed
+                    if best_score >= 5:  # Adjust threshold as needed
                         found = True
                     
             # If found in RxNorm, add to validated list
