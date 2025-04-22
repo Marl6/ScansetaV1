@@ -129,7 +129,7 @@ def scan_image():
 
         # First, detect all medicines in the image
         initial_prompt = {
-            "detected_medicines": "What are the medicine names detected in this image? Please provide ONLY the names separated by commas without any additional text, explanations, or formatting. Example output format: 'Amoxicillin, Losartan'"
+            "detected_medicines": "What are the medicine names detected in this image? Please provide ONLY the names separated by commas without any additional text, explanations, or formatting. Example output format if any medicines found: 'Amoxicillin, Losartan'. If no medicine names are detected/found, return an empty string with no explanation."
         }
         
         # Get the list of detected medicines first

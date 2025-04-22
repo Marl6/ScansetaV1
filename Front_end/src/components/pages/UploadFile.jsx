@@ -359,19 +359,27 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
                 
                 console.log('Detected medicines from API:', detectedMedicines);
                 
-                // Validate medicines against RxNorm database
-                validateMedicinesWithRxNorm(detectedMedicines);
+                // If no medicines were detected, show status message
+                if (detectedMedicines.length === 0) {
+                  setStatusMessage('No medicine found');
+                  setTimeout(() => setStatusMessage(''), 3000);
+                  setScanButtonState('hidden');
+                } else {
+                  // Validate medicines against RxNorm database
+                  validateMedicinesWithRxNorm(detectedMedicines);
+                }
               } else {
-                // If no medicines were detected, add a placeholder
-                detectedMedicines = ['Medicine detected']; // Generic placeholder
-                console.log('No medicines detected, using placeholder');
+                // If no medicines were detected in the response
+                console.log('No medicines detected in API response');
+                setStatusMessage('No medicine found');
+                setTimeout(() => setStatusMessage(''), 3000);
                 
-                // Set the medicines state directly since no validation needed
-                setPredictedMedicines(detectedMedicines);
-                setOriginalMedicines(detectedMedicines); // Store the original list for reset
+                // Set empty medicines list
+                setPredictedMedicines([]);
+                setOriginalMedicines([]);
                 
-                // Set button state to proceed since we have a placeholder medicine
-                setScanButtonState('proceed');
+                // Hide scan button
+                setScanButtonState('hidden');
               }
               
               // Don't automatically navigate to med info, let user click proceed button
