@@ -41,6 +41,8 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
   useEffect(() => {
     // Process medicine data directly from props
     if (medicineData) {
+      console.log('Medicine data received:', medicineData);
+      
       // Extract medicine names from detected_medicines (comma-separated string) or use as an array
       let medicines = [];
       if (typeof medicineData.detected_medicines === 'string') {
@@ -48,17 +50,32 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
       } else if (Array.isArray(medicineData.detected_medicines)) {
         medicines = medicineData.detected_medicines;
       }
-
-      // Update the medicine names array
-      setMedicineNames(medicines);
+      
+      console.log('All detected medicines before filtering:', medicines);
       
       // Store all medicine data for easy access
       if (medicineData.medicine_data) {
         setAllMedicineData(medicineData.medicine_data);
         
+        // IMPORTANT: Filter out medicines that don't have corresponding data
+        // This prevents the "No data found" error for medicines like Bactrim
+        const medicinesWithData = medicines.filter(medicine => {
+          // Check if data exists for this medicine (direct or case-insensitive)
+          const hasData = findMedicineData(medicine, medicineData.medicine_data) !== null;
+          if (!hasData) {
+            console.log(`Filtering out medicine "${medicine}" - no data available`);
+          }
+          return hasData;
+        });
+        
+        console.log('Filtered medicines with data:', medicinesWithData);
+        
+        // Update the medicine names array with only medicines that have data
+        setMedicineNames(medicinesWithData);
+        
         // Set initial content for the first medicine (if available)
-        if (medicines.length > 0) {
-          const firstMedicine = medicines[0];
+        if (medicinesWithData.length > 0) {
+          const firstMedicine = medicinesWithData[0];
           const medicineSpecificData = findMedicineData(firstMedicine, medicineData.medicine_data) || {};
           
           setContentMap({
@@ -69,6 +86,7 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
         }
       } else {
         // Fallback for old data structure if needed
+        setMedicineNames(medicines); // No filtering in this case
         setContentMap({
           info: medicineData.medicine_info || 'No information available',
           usage: medicineData.medicine_usage || 'No usage information available',
