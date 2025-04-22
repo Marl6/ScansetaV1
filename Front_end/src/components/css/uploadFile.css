@@ -488,10 +488,39 @@ html, body {
  
   .preview-img {
     width: 100%; /* Make the image width match the container's width */
-    height: auto; /* Maintain aspect ratio for the width */
-    object-fit: contain; /* Ensures the image fills the width while cropping excess height */
+    height: 100%; /* Fill the full height of the container */
+    object-fit: cover; /* Cover the container, cropping if necessary */
     border-radius: 8px; /* Rounded corners */
     display: block; /* Ensure proper rendering in all browsers */
+    max-width: 100%; /* Ensure it never exceeds container width */
+  }
+  
+  /* Webcam feed styling */
+  .webcam-feed {
+    width: 100% !important; /* Force full width */
+    aspect-ratio: 4/3; /* Standard webcam aspect ratio (640×480) */
+    border-radius: 8px; /* Rounded corners */
+    object-fit: cover; /* Fill the container, crop if needed */
+    display: block; /* Remove any inline spacing */
+    /* Transform properties for zoom, rotation and mirroring */
+    /* Uncomment or adjust the transform properties as needed: */
+    transform: 
+      /* Zoom level - adjust value for more/less zoom */
+      scale(1.0) 
+      /* Rotation - adjust degrees for rotation (0-360) */
+      rotate(0deg) 
+      /* Horizontal mirror - use scaleX(-1) to flip horizontally */
+      scaleX(-1)
+      /* Vertical mirror - use scaleY(-1) to flip vertically */
+      /* scaleY(-1) */
+      ;
+    transform-origin: center; /* Transform from the center */
+  }
+  
+  /* Ensure the video element takes up the right space */
+  video.webcam-feed {
+    max-width: 100%;
+    max-height: 100%;
   }
   
   .placeholder {
