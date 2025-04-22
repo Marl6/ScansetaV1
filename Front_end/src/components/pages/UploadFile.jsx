@@ -129,6 +129,13 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
       }
     };
   }, []); // Empty dependency array means this runs on mount and cleanup on unmount
+
+  // Reset scanButtonState to 'scan' whenever information-display is hidden (predictedMedicines is empty)
+  useEffect(() => {
+    if (predictedMedicines.length === 0) {
+      setScanButtonState('scan');
+    }
+  }, [predictedMedicines.length]);
   
 
   const handleFileChange = (event) => {
@@ -578,7 +585,7 @@ const UploadFile = ({ goNext, goBack, goToMedInfo, setMedicineData }) => {
 
       
           {/* Conditionally Render Information Display */}
-          {predictedMedicines.length > 0 && toggleMode !== "Camera" && (
+          {predictedMedicines.length > 0 && (
             <div className="information-display">
               <div className="information-title-display">
                 <strong>DETECTED MEDICINE</strong>
