@@ -548,7 +548,11 @@ html, body {
 .status-text {
   display: flex;
   justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
   color: #32B8CA;
+  margin: 0 auto;
   opacity: 0; /* Start with opacity 0 for fade-in effect */
   animation: fadeIn .5s forwards; /* Apply fadeIn animation */
 }
