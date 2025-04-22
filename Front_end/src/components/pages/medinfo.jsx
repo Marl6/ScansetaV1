@@ -216,7 +216,7 @@ const MedInfo = ({ goBackToUploadFile, goBackToSearchMed, medicineData, source }
                     // Replace ### headings with * format
                     .replace(/###\s+([^\n]+)/g, '$1')
                     
-                    // Replace newlines with line breaks
+                    // Replace newlines with line breaks  
                     .replace(/\n/g, '<br />')
 
                 }}
